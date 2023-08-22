@@ -1,0 +1,26 @@
+#For transcriptome data:
+
+
+## raw data: trimmed reads, 2 paired read files & 2 unpaired read files
+1. run Centrifuge
+2. run eukfinder_short
+
+## assemble fasta
+run eukfinder_long
+
+#Issues to solve:
+
+## Eukfinder_short:
+1. what if raw data is single fastq (not paired)
+2. what if no unpaired files after trimmomatic or after bowtie2 in the preparation step
+    --> error, discontinued
+3. mhlen for centrifuge: only need it for assembled fasta, should be 100 or higher
+
+
+## Eukfinder_long:
+1. test for PacBio and Nanopore datasets
+2. cov, if 10% or 20%, maybe too long for the superlong reads. better to set 2 threshold (one for length, ie, 200bp or 1000 bp, the other for % of length) and then choose one
+
+
+Note:
+--mhlen in both Eukfinder_short and Eukfinder_long 

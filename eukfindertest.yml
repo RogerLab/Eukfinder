@@ -1,0 +1,21 @@
+package:
+  name: eukfindertest
+  version: {{ 1.2.3 }}
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python=3
+  - ete3
+  - numpy
+  - pandas
+  - joblib
+  - pyqt=5
+  - spades
+  - seqkit
+  - trimmomatic
+  - centrifuge
+  - bowtie2
