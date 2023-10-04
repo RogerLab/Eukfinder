@@ -29,7 +29,7 @@ Note: We are working to making Eukfinder available on Bioconda, so that this tut
 ### 1. Clone this repository
 
 ```sh
-git clone https://github.com/dzhao2019/eukfindertest.git
+git clone https://github.com/RogerLab/Eukfinder.git
 ```
 
 <br>
