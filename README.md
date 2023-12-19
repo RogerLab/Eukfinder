@@ -77,9 +77,9 @@ https://github.com/richardmleggett/acc2tax
 See [Wiki](https://github.com/dzhao2019/eukfindertest/wiki) for detailed description
 
 **Eukfinder read_prep**
-Run Trimmomatic to remove low quality reads, and adaptors
+Run Trimmomatic to remove low-quality reads, and adaptors
 Run Bowtie2 to remove host reads
-Run Centrifuge for first round of classification
+Run Centrifuge for the first round of classification
 
     Eukfinder read_prep [-h] --r1 R1 --r2 R2 -n THREADS -i ILLUMINA_CLIP
                                --hcrop HCROP -l LEADING_TRIM -t TRAIL_TRIM --wsize
@@ -111,7 +111,7 @@ Run Centrifuge for first round of classification
 <!-- CONTRIBUTING -->
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Contributions are what makes the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
@@ -129,7 +129,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Citation
-Dandan Zhao, Dayana E. Salas-Leiva, Shelby K. Williams, Andrew J. Roger, Eukfinder: a pipeline to retrieve microbial eukaryote genomes from metagenomic sequencing data (In preparation for submission)
+Dandan Zhao, Dayana E. Salas-Leiva, Shelby K. Williams, Katherine A. Dunn, Andrew J. Roger, Eukfinder: a pipeline to retrieve microbial eukaryote genomes from metagenomic sequencing data (In preparation for submission)
 
 
 
