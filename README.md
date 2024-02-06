@@ -62,6 +62,7 @@ https://github.com/richardmleggett/acc2tax
 https://sourceforge.net/projects/sb2nhri/files/MyCC/
 
 <br>
+
 ### 4. Download or build databases
  
   Default reference databases can be downloaded from [Eukfinder Databases](https://perun.biochem.dal.ca/Metagenomics-Scavenger/)
