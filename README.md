@@ -12,9 +12,14 @@ Schematic representation of Eukfinder workflows. Eukfinder is a taxonomic classi
 
 
 ## Requirements
+
+spades, seqkit, trimmomatic, bowtie2, centrifuge, acc2tax, plast
+
+### Python Libraries
+
 Python >= 3.7
 
-ete3,numpy, pandas, joblib, pyqt, spades, seqkit, trimmomatic, bowtie2, centrifuge, acc2tax, plast
+ete3, numpy, pandas, joblib, pyqt, bs4, dask, urllib3, multiprocessing, distributed
 
 
 ## Installation 
