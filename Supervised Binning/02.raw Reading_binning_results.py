@@ -1,3 +1,7 @@
+"""  
+Read in binning results from Maxbin, Metabat2 and MyCC, and combine results into one table.                                                  
+"""   
+
 #   Info  #
 __author__ = 'Dandan Zhao'
 __email__ = 'd.zhao@dal.ca'

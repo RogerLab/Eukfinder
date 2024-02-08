@@ -1,4 +1,7 @@
-03.raw Combine_results_Eukfinder.py
+"""  
+Read in results from step 1 & 2 and Metaxa2, and combine results into one table.                                                  
+"""   
+
 
 #   Info  #
 __author__ = 'Dandan Zhao'

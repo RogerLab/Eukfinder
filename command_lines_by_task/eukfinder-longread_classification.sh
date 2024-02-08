@@ -5,16 +5,16 @@
 #$ -pe threaded 20
 
 cd $PWD
-source activate Metagenomics-Scavenger
+source activate Eukfinder
 input=20.fastq
 prefix=mytest_lr
 #path to the eukfinder script
 # path to databases
-acc2tax=/db1/extra-data-sets/Acc2tax/Acc2Tax_04_01_2024/
 # this can be customized similarly as in ReadClassifier script
-plastdb=/scratch4/dsalas/Shared/EukfinderLabDB/GenericDB.lab.fasta
-plastmap=/scratch4/dsalas/Shared/EukfinderLabDB/GenericDB.lab.map
-centrifuge=/scratch2/software/centrifuge-1.0.3/Centrifuge_Apr7_DB
+plastdb=Plast_DB.fasta
+plastmap=Plast_DB.map
+centrifuge=Centrifuge_DB
+acc2tax=Acc2Tax_DB
 
 # information about flags:
 #     $home/eukfinder_pre-class.py -h  --> will indicate the available submenus: read_prep,short_seqs,long_seqs)

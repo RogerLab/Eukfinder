@@ -1,6 +1,6 @@
 '''
 Parsing Human gut metagenomic samples for Blastocystis genomes
-Parsing_binning_results_Human_samples_extract_Mito_first_Tiara.py
+
 '''
 
 #   Info  #

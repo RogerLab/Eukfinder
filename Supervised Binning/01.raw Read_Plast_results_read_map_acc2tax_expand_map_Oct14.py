@@ -1,6 +1,8 @@
 """  
 Read in a BLAST or PLAST result and write the wanted columns to into a new file.                                                  
-"""                                       #   Info  #
+"""                                       
+
+#   Info  #
 __author__ = 'Dandan Zhao'
 __email__ = 'd.zhao@dal.ca'
 __version__ = '1.0.0'
