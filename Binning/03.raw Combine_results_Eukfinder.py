@@ -1,6 +1,12 @@
 03.raw Combine_results_Eukfinder.py
 
-import os, sys, re                                                                          
+#   Info  #
+__author__ = 'Dandan Zhao'
+__email__ = 'd.zhao@dal.ca'
+__version__ = '1.0.0'
+#   End Info   #
+
+import os, sys, re              
 import argparse
 from Bio import SeqIO
 import subprocess

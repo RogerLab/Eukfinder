@@ -1,7 +1,12 @@
 """  
 Read in a BLAST or PLAST result and write the wanted columns to into a new file.                                                  
-"""                                                                                 
-import sys,re, time                                                                          
+"""                                       #   Info  #
+__author__ = 'Dandan Zhao'
+__email__ = 'd.zhao@dal.ca'
+__version__ = '1.0.0'
+#   End Info   #
+                                          
+import sys,re, time
 import argparse
 import pandas as pd
 from Bio import Entrez

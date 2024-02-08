@@ -136,9 +136,9 @@ Zhao, D., Salas-Leiva, D.E., Williams, S.K., Dunn, K.A. and Roger, A.J., 2023. E
 <br>
 <!-- CONTACT -->
 ## Contact
-d.taya.zhao@gmail.com
+d.zhao@dal.ca
 
-dayana.salas.leiva@gmail.com
+ds2000@cam.ac.uk
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments

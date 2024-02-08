@@ -12,37 +12,15 @@ import pandas as pd
 from subprocess import PIPE, run
 from joblib import Parallel, delayed
 
-# ls -lthr /home/dsalas/Shared/Eukfinder
-# -rwxrwxrwx 1 dsalas roger  76K Feb 14  2021 eukfinder_Euk-Unk_v1.2.3.py
 
-'''
-[diff_v1.2.1_v1.2.3.txt]
-14a15,22
-> ' ' '
-> 919,920c928,929
-> <                   'acc2tax_nucl_all.txt', 'gi_taxid_nucl.dmp',
-> <                   'gi_taxid_prot.dmp']
-> ---
-> >                    'acc2tax_nucl_all.txt']#, 'gi_taxid_nucl.dmp',
-> >                    #'gi_taxid_prot.dmp']
-> ' ' '
-799,800c807
-<                      ('Misc', label, pref, Misc, reads),
-<                      ('Euk', label, pref, Euk, reads)]
----
->                      ('Misc', label, pref, Misc, reads)]
-920,921c927,928
-<                   'acc2tax_nucl_all.txt']#, 'gi_taxid_nucl.dmp',
-<                   #'gi_taxid_prot.dmp']
----
->                    'acc2tax_nucl_all.txt']#, 'gi_taxid_nucl.dmp',
->                    #'gi_taxid_prot.dmp']
-1533c1540
-<     cen = glob.glob('%s*' % user_args['cdb'])
----
->     cen = glob.glob('%s*.cf' % user_args['cdb'])
+#   Info  #
+__author__ = 'Dayana E. Salas-Leiva'
+__email__ = 'ds2000@cam.ac.uk'
+__version__ = '1.0.0'
+#   End Info   #
 
-'''
+
+
 # --- preparation ---
 
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
@@ -57,7 +35,7 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
                                                           mlenght)
 
     ms = 'trimmomatic cmd_line:\n%s\n' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     lst = r1_out.split() + r2_out.split()
@@ -74,14 +52,14 @@ def bowtie2build(hostg):
     bn = re.split(r'.fasta$|.fa$|.fas$', bn, flags=re.IGNORECASE)[0]
     cmd = 'bowtie2-build -f %s %s' % (hostg, bn)
     ms = 'bowtie2 build cmd_line:\n%s' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     if len(glob.glob('*bt2')) != 0:
         return bn
     else:
         ms = 'bowtie indexes could not be built.\n'
         ms += 'Exiting program\n'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
 
 def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
@@ -91,7 +69,7 @@ def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
         cmd += ' -1 %s -2 %s -U %s -S %s.sam ' % (r1, r2, catr1r2, bn)
         cmd += '--un-conc %s_p.fastq --un %s_un.fastq --no-unal' % (bn, bn)
         ms = 'bowtie2 fastq-host cmd_line:\n%s' % cmd
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         bt2faR1 = os.path.abspath('%s_p.1.fastq' % bn)
         bt2faR2 = os.path.abspath('%s_p.2.fastq' % bn)
         bt2faun = os.path.abspath('%s_un.fastq' % bn)
@@ -104,7 +82,7 @@ def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
         cmd += '--al-conc %s_bowtie2.fastq ' % bn
         cmd += '--al %s_bowtie2.un.fastq --no-unal' % bn
         ms = 'bowtie2 fastq cmd_line:\n%s' % cmd
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         bt2fqR1 = os.path.abspath('%s_bowtie2.1.fastq' % bn)
         bt2fqR2 = os.path.abspath('%s_bowtie2.2.fastq' % bn)
         bt2fqun = os.path.abspath('%s_bowtie2.un.fastq' % bn)
@@ -115,7 +93,7 @@ def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
         cmd += '-U %s -S %s.sam --al %s_bowtie2.fasta' % (catr1r2, bn, bn)
         cmd += '--no-unal'
         ms = 'bowtie2 fasta cmd_line:\n%s' % cmd
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         bt2fa = os.path.abspath('%s_bowtie2.fasta' % bn)
         return bt2fa, None, None, cmd
 
@@ -134,7 +112,7 @@ def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
         gline += '-1 %s -2 %s -S %s ' % (bn_r1, bn_r2, report)
         gline += '--report-file %s.tsv' % report
         ms = 'centrifuge pair cmd_line:\n%s' % gline
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         return gline, report
 
     else:
@@ -144,13 +122,15 @@ def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
         gline += '-U %s -S %s --report-file %s.tsv ' % (bn_r1r2,
                                                         report, report)
         ms = 'centrifuge unpair cmd_line:\n%s' % gline
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         return gline, report
 
 
 def cats(b_outname):
     os.chdir('..')
     cwd = os.getcwd()
+    ms = 'cwd %s' % cwd
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     # up_dir = cwd.split('/Temp')[0]
     outr1 = os.path.join(cwd, '%s.EUnkR1.fq' % b_outname)
     outr2 = os.path.join(cwd, '%s.EUnkR2.fq' % b_outname)
@@ -161,13 +141,13 @@ def cats(b_outname):
 # ---  classification ---
 
 def reading_reports(infile):
-    '''
+    """
 
     :param infile:
     :return:
-    '''
+    """
     ms = 'Processing %s ...' % infile
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     if infile is not None:
         sorting_list = ['score']
         chunksize = 1000 * 10
@@ -183,22 +163,22 @@ def reading_reports(infile):
         table = table.groupby('readID', as_index=False).first()
         table = table.loc[:, ['readID', 'seqID', 'taxID']]
         ms = 'Report has been read'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         return table
     else:
         m = 'report file has not been declared '
         m += 'or the declared file is not in the directory. The file or '
         m += 'a symbolic link must exist in the working directory.'
-        print(m, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
         return pd.DataFrame()
 
 
 def minimal(tupla):
-    '''
+    """
 
     :param tupla:
     :return:
-    '''
+    """
     # presort... groupby will retain the relative position
     chunk, sorting_list, typ, pid, cov, lr = tupla
     if not lr:
@@ -235,17 +215,17 @@ def minimal(tupla):
     else:
         ms = 'Chunk does not fullfill identity and coverage criteria. '
         ms += 'This produced an empty read chunk'
-        print(ms, sep=' ', end='\n', flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         print('empty chunk is :\n', newchunk)
         return newchunk
 
 
 def parseplastoutput(single_plout, ident, cov, lr):
-    '''
+    """
 
     :param single_plout:
     :return:
-    '''
+    """
     colnames = ['query ID', 'subject ID', 'pidentity', 'aln_length',
                 'nb.misses', 'nb.gaps', 'qbegin', 'qend', 'sbegin',
                 'send', 'e-value', 'bit score', 'unknown', 'qlen',
@@ -300,14 +280,14 @@ def parseplastoutput(single_plout, ident, cov, lr):
 
 
 def cmd(CPUs, chunk, pDBpath, evalue, long=False):
-    '''
+    """
 
     :param CPUs:
     :param chunk:
     :param pDBpath:
     :param evalid:
     :return:
-    '''
+    """
     # evalue = float(evalid.split(':')[0])
     line = 'plast -e %s -max-hit-per-query 1 -outfmt 2 '
     line += '-a %s -p plastn -i %s -d %s -o %s.plout '
@@ -319,37 +299,37 @@ def cmd(CPUs, chunk, pDBpath, evalue, long=False):
         line += '\n'
         line %= (evalue, CPUs, chunk, pDBpath, chunk)
     ms = 'plast cmd line:\n%s ' % line
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return line
 
 
 def my_run(cmdline):
-    '''
+    """
 
     :param cmdline:
     :return:
-    '''
+    """
     run(cmdline, stderr=PIPE,
         stdout=PIPE, shell=True, bufsize=1,
         close_fds=True, universal_newlines=True)
 
 
 def plastsearches(CPUs, pDBpath, evalue, pattern):
-    '''
+    """
 
     :param CPUs:
     :param pDBpath:
     :param evalue:
     :param pattern:
     :return:
-    '''
+    """
     abs_pattern = os.path.join(os.getcwd(), pattern)
     queries = glob.glob(abs_pattern)
     # queries = glob.glob(pattern): i added 2 lines above instead of this one
     label = pattern[0].upper()
     if queries:
         ms = 'plast search in progress ...'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         pSubprocesses = [cmd(CPUs, chunk, pDBpath, evalue) for
                          chunk in queries]
         _ = Parallel(n_jobs=-2)(delayed(my_run)(cmd_line)
@@ -362,35 +342,41 @@ def plastsearches(CPUs, pDBpath, evalue, pattern):
 
 
 def parsingplastsearches(list_of_results, pid, cov, lr):
-    '''
+    """
 
     :param list_of_results:
     :return:
-    '''
+    """
     time.sleep(5)
-    label = list_of_results[0][1]
-    ms = 'parsing plast outputs for %s ....' % label
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
-    allplast_outs = []
-    pouts = [parseplastoutput(out[0], pid, cov, lr) for out in
-             list_of_results if os.stat(out[0]).st_size != 0]
-    if pouts:
-        plast_outputs = pd.concat(pouts)
-        allplast_outs.append((label, plast_outputs))
+    print('list_of_results', list_of_results)
+    if len(list_of_results[0]) != 0:
+        label = list_of_results[0][1]
+        ms = 'parsing plast outputs for %s ....' % label
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        allplast_outs = []
+        pouts = [parseplastoutput(out[0], pid, cov, lr) for out in
+                 list_of_results if (os.path.exists(out[0]) and
+                                     os.stat(out[0]).st_size != 0)]
+        if pouts:
+            plast_outputs = pd.concat(pouts)
+            allplast_outs.append((label, plast_outputs))
+        else:
+            allplast_outs.append((label, pd.DataFrame()))
+        return allplast_outs
     else:
-        allplast_outs.append((label, pd.DataFrame()))
-    return allplast_outs
+        print('blast results are empty. exiting program until bug is fixed')
+        sys.exit(-1)
 
 
 def matchmaker(ncbi, regex, readid, taxid):
-    '''
+    """
 
     :param ncbi:
     :param regex:
     :param readid:
     :param taxid:
     :return:
-    '''
+    """
     lineage = ncbi.get_lineage(taxid)
     Se_lineage = pd.Series(ncbi.get_taxid_translator
                            (lineage), name=taxid)
@@ -408,9 +394,9 @@ def matchmaker(ncbi, regex, readid, taxid):
 
 
 def binningbytaxonomy(report_df):
-    '''
+    """
     slice reports by taxonomic domain
-    '''
+    """
     ncbi = ete3.NCBITaxa()
     regex = re.compile(r'^\bBacteria\b$|^\bArchaea\b$|'
                        r'^\bEukaryota\b$|vir',
@@ -430,12 +416,12 @@ def binningbytaxonomy(report_df):
 
 
 def taxpickup(binned_lists, main_df):
-    '''
+    """
 
     :param binned_lists:
     :param main_df:
     :return:
-    '''
+    """
     maintaxidlist = [tupla for sublist in
                      binned_lists for tupla in sublist]
 
@@ -450,25 +436,25 @@ def taxpickup(binned_lists, main_df):
 
 
 def dataframe_collection(df, npartitions):
-    '''
+    """
 
     :param df:
     :param npartitions:
     :return:
-    '''
+    """
     df_size = len(df.index)
     if npartitions > df_size:
         ms = 'Number of partitions is larger '
         ms += 'than dataframe size. The number of'
         ms += 'partitions will be set to: %s' % df_size
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         npartitions = df_size
     df_split = np.array_split(df, npartitions)
     return df_split
 
 
 def directplast(new_dir_path, file_name, suffix, name, max_plast, cpus):
-    '''
+    """
 
     :param new_dir_path:
     :param file_name:
@@ -477,7 +463,7 @@ def directplast(new_dir_path, file_name, suffix, name, max_plast, cpus):
     :param max_plast:
     :param cpus:
     :return:
-    '''
+    """
     try:
         cmd = 'seqkit fq2fa %s | seqkit split -p %s -j %s -' % (file_name,
                                                                 max_plast,
@@ -486,7 +472,7 @@ def directplast(new_dir_path, file_name, suffix, name, max_plast, cpus):
         cmd = 'seqkit split -1 %s -p %s -j %s ' % (file_name, max_plast, cpus)
 
     ms = 'directplast cmd is:\n%s' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
     # change name of output and moving it to a different directory
@@ -496,12 +482,12 @@ def directplast(new_dir_path, file_name, suffix, name, max_plast, cpus):
 
 
 def relocating_files(suffix, new_dir_path):
-    '''
+    """
 
     :param suffix:
     :param new_dir_path:
     :return:
-    '''
+    """
     splits = os.path.join(os.getcwd(), 'stdin.split')
     files = glob.glob('%s/*' % splits)
     count = 0
@@ -518,7 +504,7 @@ def relocating_files(suffix, new_dir_path):
 def isfasta(infile):
     cmd = 'head -1 %s' % infile
     ms = 'cmd isfasta is %s' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     line1 = _.stdout.decode('utf-8')
     if line1.startswith('>'):
@@ -529,7 +515,7 @@ def isfasta(infile):
 
 def split_reads(new_dir_path, reads_to_select, read_file,
                 suffix, name, cpus, max_plast):
-    '''
+    """
 
     :param new_dir_path:
     :param reads_to_select:
@@ -539,7 +525,7 @@ def split_reads(new_dir_path, reads_to_select, read_file,
     :param cpus:
     :param max_plast:
     :return:
-    '''
+    """
     path_list = os.path.join(os.getcwd(), '%s_list.tmp' % suffix)
     handle = open(path_list, 'w')
     for read in reads_to_select:
@@ -556,7 +542,7 @@ def split_reads(new_dir_path, reads_to_select, read_file,
         cmd += 'fq2fa -|seqkit split2 -p %s -j %s' % (max_plast, cpus)
 
     ms = 'seqkit cmd:\n %s' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
 
     # change name of output and moving it to a different directory
@@ -567,7 +553,7 @@ def split_reads(new_dir_path, reads_to_select, read_file,
 
 def slicing(new_dir_path, main_df, file_name, df_class_report,
             suffix, name, cpus, max_plast):
-    '''
+    """
     It creates a complete data frame containing pre-classified
     columns by readId and NaN objects post centrifuge
     :param new_dir_path:
@@ -579,7 +565,7 @@ def slicing(new_dir_path, main_df, file_name, df_class_report,
     :param cpus:
     :param max_plast:
     :return:
-    '''
+    """
     start_time = time.time()
     if cpus <= 10:
         n_chunks = 10
@@ -596,7 +582,7 @@ def slicing(new_dir_path, main_df, file_name, df_class_report,
     ms = 'Elapsed time at taxonomy binning:\n%s seconds or %s ' % (elapsed,
                                                                    minutes)
     ms += 'minutes or %s hours' % hours
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     #
     full_df = taxpickup(dfs, main_df)
     _ = full_df.to_csv('%sfull_df.tsv' % name, sep='\t', header=True)
@@ -607,27 +593,27 @@ def slicing(new_dir_path, main_df, file_name, df_class_report,
     if slice:
         file_names = split_reads(new_dir_path, slice, file_name, suffix,
                                  name, cpus, max_plast)
-        print(file_names, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(file_names, sep=' ', end='\n', file=sys.stdout, flush=True)
         return full_df, file_names
     else:
         m = 'Nothing to slice!'
-        print(m, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
         return pd.DataFrame(), m
 
 
 def Taxonomy_translation(acc2DBpath, pre_acc2tax_df, suffix, typ):
-    '''
+    """
      Executable of acc2tax MUST be in the environmental path
     :param acc2DBpath:
     :param pre_acc2tax_df:
     :param suffix:
     :param typ:
     :return:
-    '''
+    """
     # writing acc2taxIN as input for acc2tax software
     base_fname = string_out(pre_acc2tax_df, suffix, typ)
     ms = 'Extracting taxonomy with acc2tax...'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     line = 'acc2tax -a -d %s -i %sIN%s -n -o %sOUT%s.raw'
     line %= acc2DBpath, base_fname, suffix, base_fname, suffix
     run(line, stdout=PIPE,
@@ -659,21 +645,21 @@ def Taxonomy_translation(acc2DBpath, pre_acc2tax_df, suffix, typ):
         return temp
     else:
         ms = 'taxdump is empty'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         return taxdump
 
 
 def customtaxtranslation(seqidtaxid_map, parseby, plast_output):
-    '''
+    """
 
     :param seqidtaxid_map:
     :param parseby:
     :param plast_output:
     :return:
-    '''
+    """
     # subject ID and first column of seqidtaxid_map must match
     ms = 'Using custom taxonomy ...'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     colnames = ['subject ID', 'taxID', 'Group']
     taxid_map = pd.read_table(seqidtaxid_map, sep='\t',
                               header=None, names=colnames,
@@ -687,13 +673,13 @@ def customtaxtranslation(seqidtaxid_map, parseby, plast_output):
 
 
 def string_out(df, suffix, typ='RefSeq'):
-    '''
+    """
 
     :param df:
     :param suffix:
     :param typ:
     :return:
-    '''
+    """
     outname = 'acc2taxIN'
     if (os.path.isfile('%s%s' % (outname, suffix))
             or os.path.isfile('acc2taxOUT%s.raw' % suffix)):
@@ -731,13 +717,13 @@ def other_dfs(df):
 
 
 def bin(gdf, group, label):
-    '''
+    """
 
     :param gdf:
     :param group:
     :param label:
     :return:
-    '''
+    """
     try:
         x = gdf.get_group(group)
         _ = x.to_csv('%s_grouped_by_%s.tsv' % (label, group),
@@ -746,14 +732,14 @@ def bin(gdf, group, label):
                   :, 'readID'].tolist())
     except:
         ms = 'empty bin %s %s' % (label, group)
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         val = set()
     return val
 
 
 def tokeep(grouped_df, group,
            excludegroup, reject_set, label):
-    '''
+    """
     Subsetting by exclusion of 'rejecting set'
     :param grouped_df:
     :param group:
@@ -761,7 +747,7 @@ def tokeep(grouped_df, group,
     :param reject_set:
     :param label:
     :return:
-    '''
+    """
     try:
         eg = [excludegroup]
         df = grouped_df.get_group(group)
@@ -778,13 +764,13 @@ def tokeep(grouped_df, group,
 
 
 def intersects(set1, set2, set3):
-    '''
+    """
     Checking if intersections among bins exist
     :param set1:
     :param set2:
     :param set3:
     :return:
-    '''
+    """
     isects = [set1.intersection(set2),
               set1.intersection(set3),
               set2.intersection(set3)]
@@ -797,14 +783,14 @@ def intersects(set1, set2, set3):
 
 
 def grouper(label, pref, df, reads):
-    '''
+    """
     Grouping by major categories and check to deduplicate dfs
     :param label:
     :param pref:
     :param df:
     :param reads:
     :return:
-    '''
+    """
     merged, pre_unknown = df
     if not merged.empty:
         _ = merged.to_csv('%s_merged_df.tsv' % label, sep='\t', header=True)
@@ -816,7 +802,7 @@ def grouper(label, pref, df, reads):
         Vir = tokeep(grouped_df, 'Vir', 'Eukaryota', Euk, label)
 
         # making sure no duplicates are present and
-        # enforcing eukaryota and unkown to merge
+        # forcing the merge of eukaryota and unkown.
         intersect, Bact, Arch, Misc = intersects(Bact, Arch, Vir)
         Euk = Euk.difference(intersect)
         Preset = set().union(*[Bact, Arch, Vir, Euk])
@@ -836,12 +822,12 @@ def grouper(label, pref, df, reads):
 
 
 def nullandmerged(df1, df2):
-    '''
+    """
 
     :param df1:
     :param df2:
     :return:
-    '''
+    """
     if not 'Group' in df1.columns:
         df1 = df1.assign(Group=np.NaN)
     df1.Group = df1.Group.astype(str)
@@ -860,26 +846,37 @@ def nullandmerged(df1, df2):
 
 
 def empty(df):
-    '''
+    """
 
     :param df:
     :return:
-    '''
+    """
     if not 'Group' in df.columns:
         df = df.assign(Group=np.NaN)
     pre_unknown = set(df['readID'].tolist())
     merged = pd.DataFrame()
     ms = 'In emtpy: pre_unknown\n %s, merged\n%s' % (pre_unknown, merged)
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return merged, pre_unknown
 
 
 def input_check_and_setup(user_args):
-    '''
+    """
 
     :param user_args: dictionary containing arguments
     :return: type: list of the checked arguments
-    '''
+    """
+    # Check that plast and acc2tax are in path
+    plast_exists = program_exists('plast')
+    acc2tax_custom_exists = program_exists('acc2tax')
+    if plast_exists is False or acc2tax_custom_exists is False:
+        m = 'Eukfinder requirements are not met: '
+        m += 'plast is installed: ', plast_exists
+        m += '\nacc2tax is installed: ', acc2tax_custom_exists
+        m += '\nExiting program'
+        print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
+        sys.exit(0)
+
 
     # --- Global required values ---
     map_id_path = user_args['plast_id_map']
@@ -892,6 +889,7 @@ def input_check_and_setup(user_args):
     n_cpu = user_args['number_of_threads']
     max_plast = user_args['number_of_chunks']
     base_outname = user_args['out_name']
+
 
     # args specific to illumina workflow
     if user_args['func'].__name__ == 'long_seqs':
@@ -932,32 +930,32 @@ def input_check_and_setup(user_args):
         ms += '*** Reads and Classification files are : ***\n'
         ms += '%s\n' % '\n'.join(declared)
         ms += '---  Exiting program   ---'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
     if not os.path.exists(plast_path):
-        ms = '\n\nNo plast database found. Exiting program'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms = '\n\nPath to plast database does not exist. Terminating program'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
     if not os.path.exists(map_id_path):
         format_check = plast_path
-        ms = '\n\nNo map for plast_database was found. Exiting program'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms = '\n\nPath to map for plast database does not exist.\n'
+        ms += 'Terminating program'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
     acc2tax_fn = ['nodes.dmp', 'names.dmp', 'acc2tax_prot_all.txt',
-                  'acc2tax_nucl_all.txt']#, 'gi_taxid_nucl.dmp',
-                  #'gi_taxid_prot.dmp']
+                  'acc2tax_nucl_all.txt']
     for fn in acc2tax_fn:
         apath = os.path.join(acc2tax_path, fn)
         if not os.path.exists(apath):
             ms = '\n\nSomething is wrong with the acc2tax database.\n'
-            ms += 'Please make sure that you are specifiying the path to a '
+            ms += 'Please make sure you specify the path to a '
             ms += 'directory that contains the following files: '
-            ms += 'nodes.dmp, names.dmp, prot_all.txt, nucl_all.txt, '
-            ms += 'gi_taxid_nucl.dmp, gi_taxid_prot.dmp\nExiting program..'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            ms += 'nodes.dmp, names.dmp, acc2tax_prot_all.txt, '
+            ms += 'acc2tax_nucl_all.txt\nTerminating program.'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(0)
 
     if e_value is None:
@@ -970,7 +968,7 @@ def input_check_and_setup(user_args):
     if len(glob.glob('%s.*.cf' % user_args['cdb'])) != 4:
         cdb = '\nCentrifuge database does not exist in path.\n'
         cdb += 'Exiting program.\n'
-        print(cdb, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(cdb, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
     cdb_path = user_args['cdb']
     minhit_len = user_args['mhlen']
@@ -980,31 +978,37 @@ def input_check_and_setup(user_args):
         amap_id_path = user_args['ancillary_plast_id_map']
         # max_len = user_args['mlen']
         max_mem = user_args['max_m']
+        # kmers
+        if user_args['kmers'] is None or user_args['kmers'] == 'None':
+            k = '21,33,55'
+        else:
+            k = suitable_kmers(user_args['kmers'])
+
         # cdb_path = user_args['cdb']
         if aplast_path is None or not os.path.exists(aplast_path):
             aplast_path = plast_path
             amap_id_path = map_id_path
             ms = '\nNo ancillary plast database found. Current plast_database '
-            ms += 'will be used for re-classification\n'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            ms += f'{plast_path} will be used for re-classification\n'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
         if os.path.exists(aplast_path):
             if not os.path.exists(amap_id_path):
                 ms = '\n\nNo map for plast_database was found. Exiting program'
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
                 sys.exit(0)
 
         # if len(glob.glob('%s.*.cf' % user_args['cdb'])) != 4:
         #     cdb = '\nCentrifuge database does not exist in path.\n'
         #     cdb += 'Exiting program.\n'
-        #     print(cdb, sep=' ', end='\n', file=sys.stdout, flush=False)
+        #     print(cdb, sep=' ', end='\n', file=sys.stdout, flush=True)
         #     sys.exit(0)
 
         arguments = [tax_up, reads_paths, redef_reads, redef_class,
                      plast_path, map_id_path, acc2tax_path, n_cpu,
                      max_plast, e_value, pid, user_args['func'].__name__,
                      base_outname, max_mem, cdb_path,
-                     aplast_path, amap_id_path, cov, minhit_len]
+                     aplast_path, amap_id_path, cov, minhit_len, k]
     else:
         arguments = [tax_up, reads_paths, redef_reads, plast_path,
                      map_id_path, acc2tax_path, n_cpu, max_plast,
@@ -1013,12 +1017,37 @@ def input_check_and_setup(user_args):
     return arguments
 
 
+def suitable_kmers(k):
+    newk = k.replace(' ', '')
+    if ',' not in newk:
+        ms = 'A single kmer appears to have been specified: %s. ' % k
+        ms += 'Please specify at least 3 different \n'
+        ms += 'odd kmers under 128. e.g. 21,33,55\n'
+        ms += 'Terminating program.'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        sys.exit(0)
+    else:
+        v = [int(i) for i in newk.split(',')]
+        ktype = {i: (i % 2) == 0 for i in v}
+        vs = [i for i in ktype.keys() if ktype[i] is False]
+        u = [i for i in ktype.keys() if i < 128]
+        if len(vs) != len(v) or len(u) != len(v):
+            ms = 'Specified kmers are %s. %s of these ' % (len(v), len(vs))
+            ms += 'are odd and %s are under 128' % len(u)
+            ms += 'kmer requirements for metaspades have not been met.\n'
+            ms += 'Terminating program.'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            sys.exit(0)
+        return newk
+
+
+
 def bytearray_sets(infile):
-    '''
+    """
 
     :param infile:
     :return:
-    '''
+    """
     start_time = time.time()
     mycmd = 'seqkit seq -n %s' % infile
     _ = run(mycmd, stderr=PIPE, stdout=PIPE, shell=True)
@@ -1029,7 +1058,7 @@ def bytearray_sets(infile):
     hours = round((minutes / 60), 3)
     ms = 'Elapsed time at bytearrays:\n%s seconds or %s ' % (elapsed, minutes)
     ms += 'minutes or %s hours' % hours
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return headers
 
 
@@ -1041,18 +1070,18 @@ def mkdir(dir_name):
 
 
 def cpu_chunk(cpus, maxplast):
-    '''
+    """
 
     :param cpus:
     :param maxplast:
     :return:
-    '''
+    """
     cpus = int(cpus)
     max_plast = int(maxplast)
     if cpus < max_plast:
         line = 'Not enough CPUs have been allocated... '
-        line += 'exiting program with status 1'
-        print(line, sep=' ', end='\n', file=sys.stdout, flush=False)
+        line += 'Terminating program with status 1'
+        print(line, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(1)
     else:
         max_cpu = int(cpus / max_plast)
@@ -1060,11 +1089,11 @@ def cpu_chunk(cpus, maxplast):
 
 
 def getting_prefix(file_path):
-    '''
+    """
 
     :param file_paths:
     :return:
-    '''
+    """
     fname = file_path.split(os.sep)[-1]
     fname = fname.lower()
     prefix = [None if fname is None else
@@ -1073,11 +1102,11 @@ def getting_prefix(file_path):
 
 
 def rename_reads(readfile):
-    '''
+    """
 
     :param readfile:
     :return:
-    '''
+    """
     read, orient = readfile
     original_path = os.path.abspath(read)
     ftype = re.split(r'.fastq$|.fq$', read.lower())
@@ -1088,14 +1117,14 @@ def rename_reads(readfile):
     newrfile_path = os.path.join(os.getcwd(), 'tmp.%s.%s' % (orient, tail))
     cmd = 'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
     ms = 'rename reads cmd %s' % cmd
-    print(ms, sep='\t', end='\n', flush=False)
+    print(ms, sep='\t', end='\n', flush=True)
     _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
     return newrfile_path
 
 
 def pair_read_handler(cpus, max_files, files_paths, reports_list,
                       readfile_list, stamp, base_outname):
-    '''
+    """
 
     :param cpus:
     :param max_files:
@@ -1104,16 +1133,16 @@ def pair_read_handler(cpus, max_files, files_paths, reports_list,
     :param readfile_list:
     :param stamp:
     :return:
-    '''
+    """
     ms = 'Pair read handler..'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     reports = [reading_reports(inf) for inf in reports_list]
     reads = [bytearray_sets(readfile) for readfile in readfile_list]
     dirname = 'tmps_%s_%s' % (base_outname, stamp)
     mkdir(dirname)
     dirname_path = os.path.abspath(dirname)
     ms = 'working paths are:\n', files_paths
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     path_r1, path_r2, path_ur = files_paths
     pair_files = [files_paths[0], files_paths[1]]
     unpair_file = [files_paths[2]]
@@ -1176,7 +1205,7 @@ def pair_read_handler(cpus, max_files, files_paths, reports_list,
 
 def single_read_handler(cpus, max_files, files_paths, reports_list,
                         readfile_list, stamp, base_outname):
-    '''
+    """
 
     :param cpus:
     :param max_files:
@@ -1185,7 +1214,7 @@ def single_read_handler(cpus, max_files, files_paths, reports_list,
     :param readfile_list:
     :param stamp:
     :return:
-    '''
+    """
     reports = [reading_reports(inf) for inf in reports_list]
     reads = [bytearray_sets(readfile) for readfile in readfile_list]
     dirname = 'tmps_%s_%s' % (base_outname, stamp)
@@ -1207,7 +1236,7 @@ def single_read_handler(cpus, max_files, files_paths, reports_list,
 
 def unpair_dfs(dirname_path, files_paths, df_un, path1, dfr_un,
                cpus, max_files, base_outname, name='u'):
-    '''
+    """
 
     :param dirname_path:
     :param files_paths:
@@ -1218,7 +1247,7 @@ def unpair_dfs(dirname_path, files_paths, df_un, path1, dfr_un,
     :param max_files:
     :param name:
     :return:
-    '''
+    """
     #
     if not dfr_un.empty:
         _ = dfr_un.to_csv('uReportNR.tsv', sep='\t', header=True)
@@ -1236,14 +1265,14 @@ def unpair_dfs(dirname_path, files_paths, df_un, path1, dfr_un,
 
 
 def plast_search_n_results(CPUs, pDBpath, working_dfs, evalue, pid, cov, lr):
-    '''
+    """
 
     :param CPUs:
     :param pDBpath:
     :param working_dfs:
     :param evalue:
     :return:
-    '''
+    """
 
     # multi-threaded plast searches
     start_time = time.time()
@@ -1265,13 +1294,13 @@ def plast_search_n_results(CPUs, pDBpath, working_dfs, evalue, pid, cov, lr):
     minutes = round((elapsed / 60), 3)
     ms = 'Full plast searches took:\n'
     ms += '%s seconds or %s minutes' % (elapsed, minutes)
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return plast_outputs
 
 
 def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
                        pid, seqidtaxid_map=None):
-    '''
+    """
 
     :param plast_outputs_list:
     :param taxDBpath:
@@ -1279,7 +1308,7 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
     :param percentid:
     :param seqidtaxid_map:
     :return:
-    '''
+    """
     cladfs = []
     for entry in plast_outputs_list:
         etk, plast_output = entry
@@ -1293,7 +1322,7 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
                 if dfacc2tax.empty:
                     ms = 'Something seems wrong with the acc2tax information '
                     ms += 'provided'
-                    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+                    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             else:
                 dfacc2tax = Taxonomy_translation(taxDBpath, plast_output, etk,
                                                  'RefSeq')
@@ -1311,7 +1340,7 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
         else:
             ## re-check outputs... is there a bug here?
             ms = 'plastoutput empty test for unpair'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             tmpcladfs = [(label, filename, empty(df), read_paths)
                          for label, filename, df, read_paths, other in
                          working_dfs if label.startswith(etk)]
@@ -1322,16 +1351,16 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
 
 
 def writinggroups(cladfs, stamp, boutname):
-    '''
+    """
 
     :param cladfs:
     :return:
-    '''
+    """
     pre_args = []
     for label, prefix, df, read_paths in cladfs:
         pre_args.extend(grouper(label, prefix, df, read_paths))
     ms = '****\tWriting files by group\t****\n'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     for arg in pre_args:
         _ = writer(arg, stamp, boutname)
@@ -1339,12 +1368,12 @@ def writinggroups(cladfs, stamp, boutname):
 
 
 def isitready(sel_reads, fpath):
-    '''
+    """
 
     :param sel_reads:
     :param fpath:
     :return:
-    '''
+    """
     while True:
         lcount = run('wc -l %s' % fpath,
                      stderr=PIPE, stdout=PIPE, shell=True)
@@ -1357,11 +1386,11 @@ def isitready(sel_reads, fpath):
 
 
 def writer(args, stamp, boutname):
-    '''
+    """
 
     :param args:
     :return:
-    '''
+    """
     group, label, fname, read_set, path = args
     if len(read_set) > 0:
         if isinstance(path, list) and len(path) > 0:
@@ -1382,7 +1411,7 @@ def writer(args, stamp, boutname):
         minutes = round((elapsed / 60), 3)
         ms = '\nElapsed time for writing headers:\n'
         ms += '%s seconds; %s minutes' % (elapsed, minutes)
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
         start_time = time.time()
         # patch_path0 = os.path.join(path[0], 'TempEukfinder')
@@ -1392,18 +1421,20 @@ def writer(args, stamp, boutname):
                     ('%s.%sR2.fq' % (fname, group), path[1])]
             for entry in outs:
                 outname, path = entry
-                outname = os.path.join(rel_path, outname)
-                cmd = 'seqkit grep -f %s -o %s %s ' % (path_list, outname,
+                f1_path = path_list.split('TempEukfinder/')[0]
+                forced_path = os.path.join(f1_path, 'TempEukfinder')
+                abs_path_outname = os.path.join(forced_path, outname)
+                # outname = os.path.join(rel_path, outname)
+                cmd = 'seqkit grep -f %s -o %s %s ' % (path_list,
+                                                       abs_path_outname,
                                                        path)
-                ms = 'seqkit grep cmd:\n%s' % cmd
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
                 _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
                 ms = 'stdout: %s\n' % _.stdout.decode('utf-8')
                 elapsed = round(time.time() - start_time, 3)
                 minutes = round((elapsed / 60), 3)
                 ms += '\nElapsed time for writing paired outs:\n'
                 ms += '%s seconds; %s minutes' % (elapsed, minutes)
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         else:
             # if isinstance(fname, list):
             #     fname = fname[0]
@@ -1418,7 +1449,7 @@ def writer(args, stamp, boutname):
                 outname = '%s.%s.fasta' % (fname[0], group) ###1
             else:
                 ms = 'output is not list or scaffold. The fname is %s' % fname
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
                 if isfasta(path):
                     tail = 'fasta'
                 else:
@@ -1438,15 +1469,15 @@ def writer(args, stamp, boutname):
                 cmd = 'seqkit grep -f %s -o %s %s ' % (path_list, outname_path,
                                                        path)
 
-            ms = 'seqkit grep cmd:\n%s\n' % cmd
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            ms = 'scf_ seqkit grep cmd:\n%s\n' % cmd
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
             ms = 'stdout: %s\n' % _.stdout.decode('utf-8')
             elapsed = round(time.time() - start_time, 3)
             minutes = round((elapsed / 60), 3)
             ms += 'Elapsed time for writing unpaired outs:\n'
             ms += '%s seconds; %s minutes' % (elapsed, minutes)
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         # new_path = os.path.join(os.getcwd(), 'tmps_%s_%s' % (boutname, stamp))
         # shutil.move(path_list, new_path)
     return 'Done'
@@ -1455,16 +1486,20 @@ def writer(args, stamp, boutname):
 # --- post classification ---
 
 
-def assembly(read_tuple, basename, threads, maxmem):
+def assembly(read_tuple, basename, threads, maxmem, k):
     ms = 'Starting assembly phase. This will take a while...'
-    print(ms, sep='\t', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
     R1, R2, uR1R2 = read_tuple
+    if os.path.isfile(uR1R2):
+        e = '--pe1-s %s' % uR1R2
+    else:
+        e = ''
     outdir = '%s.out' % basename
     cmd = 'metaspades.py -t %s -m %s ' % (threads, maxmem)
-    cmd += '--pe1-1 %s --pe1-2 %s --pe1-s %s ' % (R1, R2, uR1R2)
-    cmd += '-o %s' % outdir
+    cmd += '--pe1-1 %s --pe1-2 %s %s ' % (R1, R2, e)
+    cmd += '-o %s -k %s' % (outdir, k)
     ms = 'Metaspades cmd_line:\n %s' % cmd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
     p1 = os.path.join(os.getcwd(), outdir)
     assembly_path = os.path.join(p1, 'scaffolds.fasta')
@@ -1483,14 +1518,14 @@ def assembly(read_tuple, basename, threads, maxmem):
             ms = "The assembly process failed. "
             ms += "There might not be enough reads left that overlap"
             ms += "to create and elongate contigs."
-            ms += "Exiting program.\n"
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            ms += "Terminating program.\n"
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(0)
     # rename assembly using basename
     scaffolds = change_c_names(os.path.abspath('scaffolds.fasta'),
                                basename)
     ms = 'Newly named assembly is:\n %s' % os.path.abspath(scaffolds)
-    print(ms, sep='\t', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
     return os.path.abspath(scaffolds), scaffolds
 
 
@@ -1504,12 +1539,12 @@ def change_c_names(assembly, basename):
             count += 1
             value = entry.split('\n')
             name = 'scaffold_%s' % count
-            if not name in new:
+            if name not in new:
                 new[name] = '\n'.join(value[1:])
                 track[name] = value[0]
             else:
                 ms = 'repeated accession %s' % value[0]
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     outname1 = 'scf_%s.fasta' % basename
     outname2 = 'scf_%s_cross_check.txt' % basename
@@ -1517,7 +1552,7 @@ def change_c_names(assembly, basename):
             open(outname2, 'w') as O2:
         for key in new.keys():
             fasta = '>%s\n%s' % (key, new[key])
-            check = '%s\t%s\n' % (key, track[name])
+            check = '%s\t%s\n' % (key, track[key])
             O1.write(fasta)
             O2.write(check)
     original_scaff = os.path.abspath(assembly)
@@ -1549,23 +1584,26 @@ def name_check(infile):
 
 
 def Perform_prep(user_args):
-    '''
+    """
     Full argument set
     :param user_args: trimmomatic arguments
     :return: all arguments to trim, map and centrifuge
-    '''
+    """
     # Trimming raw reads
     ms = 'Run has started with arguments:\n'
     for key in user_args:
         ms += '%s: %s, ' % (key, user_args[key])
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     cen = glob.glob('%s*' % user_args['cdb'])
     if len(cen) != 4:
         ms = '\nThere is something wrong with the centrifuge database '
-        ms += 'declared. Exiting program'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms += 'declared. \nMake sure that the '
+        ms += 'path declared specifies the shared suffix of '
+        ms += 'the database files (see user manual)\n. Terminating program'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
+    plastdb_home = glob.glob('%s*' % user_args['cdb'])
 
     if (not os.path.exists(user_args['r1']) or
             not os.path.exists(user_args['r2'])
@@ -1576,7 +1614,7 @@ def Perform_prep(user_args):
         ms += 'Declared files are:\nReads1 %s\nReads2: %s\nHost genome: %s\n'
         ms %= user_args['r1'], user_args['r2'], user_args['hg'],
         ms += 'Adapters file: %s\n' % user_args['illumina_clip']
-        ms += '\nExiting program.'
+        ms += '\nTerminating program.'
         print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
@@ -1585,29 +1623,29 @@ def Perform_prep(user_args):
     oR1 = os.path.abspath(user_args['r1'])
     oR2 = os.path.abspath(user_args['r2'])
     #
-    ms = 'Check logs for additional information on run progress or errors'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+
     ori_host_genome = os.path.abspath(user_args['hg'])
     start_time = time.time()
     stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
     tmpdirname = 'tmp_readprep_%s%s' % (user_args['out_name'], stamp)
     log = os.path.abspath('Read_prep_%s.log' % stamp)
     sys.stdout = open(log, 'w')
+    ms = 'Eukfinder v%s is using python %s\n' % (__version__,
+                                                 platform.python_version())
+    ms += 'Check logs for additional information on run progress or errors\n'
+    ms += 'Preparing reads for analysis...'
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     mkdir(tmpdirname)
     tmpdirname_path = os.path.abspath(tmpdirname)
     os.chdir(tmpdirname_path)
     shutil.copy(ori_host_genome, os.getcwd())
-    ms = 'Eukfinder is using python %s\n' % platform.python_version()
-    ms += 'Preparing reads for analysis.'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
 
     readfile_list = [(oR1, 'R1'), (oR2, 'R2')]
-
     nR1, nR2 = Parallel(n_jobs=-2)(delayed(rename_reads)(readfile)
                             for readfile in readfile_list)
 
     ms = 'Reads have been renamed'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     R1, R2, uR1R2 = trimming(user_args['out_name'], nR1, nR2, adapters,
                              user_args['wsize'], user_args['qscore'],
                              user_args['hcrop'], user_args['mlen'],
@@ -1616,7 +1654,7 @@ def Perform_prep(user_args):
     #
     # Mapping host out
     ms = 'Getting rid of host reads...'
-    print(ms, sep='\t', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
     b2_index = bowtie2build(user_args['hg'])
     outr1, outr2, outr1r2, cmd_line = bowtie2(user_args['out_name'],
                                               user_args['threads'], R1, R2,
@@ -1625,10 +1663,11 @@ def Perform_prep(user_args):
     ms = 'bowtie2 cmd line is:\n %s\noutr1: %s, outr2: %s and outr1r2:%s\n'
     ms %= cmd_line, outr1, outr2, outr1r2
 
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd_line, stdout=PIPE, stderr=PIPE, shell=True)
     # centrifuge host-less reads
-    ccmd_pline, p_report = centrifuge(user_args['out_name'], (outr1, outr2),
+    ccmd_pline, p_report = centrifuge(user_args['out_name'], 
+                                      (outr1, outr2),
                                       user_args['threads'],
                                       user_args['mhlen'],
                                       user_args['cdb'], 1, pair=True,
@@ -1655,48 +1694,58 @@ def Perform_prep(user_args):
             shutil.move(f, os.getcwd())
             new_abspaths.append(os.path.abspath(f))
         except:
-            ms += 'Exiting program.'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            ms += 'Terminating program.'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(1)
     try:
         os.system('rm -r %s' % tmpdirname_path)
     except:
         ms += '%s does not seem to exist\n'
-        ms += 'Exiting program.'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms += 'Terminating program.'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(1)
-    ms = "Files are ready to apply 'short_seqs' mode:\n%s" % '\n'.join(
+    ms = "Files are ready to use with 'short_seqs' mode:\n%s" % '\n'.join(
         new_abspaths)
     print(ms, flush=True)
     return my_preps
 
 
+def program_exists(name):
+    """
+    Check whether `name` is on PATH and marked as executable.
+    """
+    return shutil.which(name) is not None
+
+
 def Perform_eukfinder(user_args):
-    '''
+    """
 
     :param user_args:
     :return:
-    '''
+    """
+
     # print(user_args)
+    start_time = time.time()
+    stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
+    log = 'Class_%s.log' % stamp
+    sys.stdout = open(log, 'w')
+    ms = 'Eukfinder v%s is using python %s' % (__version__,
+                                               platform.python_version())
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     tax_up, reads_paths, redef_reads, redef_class, \
     plast_path, map_id_path, acc2tax_path, ncpu, max_plast, \
     e_value, pid, mode, base_outname, max_mem, cdb_path, aplast_path, \
-    amap_id_path, cov, mhlen = input_check_and_setup(user_args)
+    amap_id_path, cov, mhlen, kmers = input_check_and_setup(user_args)
     dirname = 'TempEukfinder'
     mkdir(dirname)
     dirpath = os.path.abspath(dirname)
     os.chdir(dirpath)
-    start_time = time.time()
-    stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
     n_cpu = cpu_chunk(ncpu, max_plast)
-    log = 'Class_%s.log' % stamp
-    sys.stdout = open(log, 'w')
-    ms = 'Eukfinder is using python %s' % platform.python_version()
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+
     ms = 'tmps_%s_%s' % (base_outname, stamp)
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     ms = 'user arguments are:\n %s' % user_args
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     # --- dumping taxonomy if requested ---
     ncbi = ete3.NCBITaxa()
@@ -1706,18 +1755,18 @@ def Perform_eukfinder(user_args):
     # --- parsing centrifuge output ---
     ms = 'Reading classification reports ...\n'
     ms += 'mode is %s' % mode
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     if mode == 'short_seqs':
         if name_check(reads_paths[0]):
             rr = '\n'.join(redef_reads)
             rp = '\n'.join(reads_paths)
             ms = 'redef_reads\n%s reads paths\n%s' % (rr, rp)
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             new_redef_reads = [rename_reads((reads_paths[0], 'R1')),
                                rename_reads((reads_paths[1], 'R2')),
                                rename_reads((reads_paths[2], 'U'))]
             ms = 'new redef reads are:\n%s\n' % '\n'.join(new_redef_reads)
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
         else:
             new_redef_reads = reads_paths
@@ -1737,6 +1786,7 @@ def Perform_eukfinder(user_args):
                                            base_outname)
     # Management of plast searches
     if existing_dfs:
+        print('processing existing df', existing_dfs)
         parsed_plouts = plast_search_n_results(n_cpu, plast_path,
                                                existing_dfs, e_value, pid,
                                                cov, False)
@@ -1747,15 +1797,18 @@ def Perform_eukfinder(user_args):
         _ = writinggroups(final_dfs, stamp, base_outname)
 
     else:
-        ms = 'No files containing reads were declared. Exiting program'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms = 'No files containing reads were declared. Terminating program'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
     #   Meta-assembly and classification
     ms = 'Re-classification step'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     cat_reads = cats(base_outname)
-    scaffolds, new_outname = assembly(cat_reads, base_outname, ncpu, max_mem)
+
+    scaffolds, new_outname = assembly(cat_reads, base_outname, ncpu, max_mem,
+                                      kmers)
 
     # Clean up -> Storing reads
     new_dir = os.path.join(os.getcwd(), 'Classified_reads')
@@ -1803,15 +1856,15 @@ def Perform_eukfinder(user_args):
         ms += "The directory 'Classified_reads' contains the read subsets "
         ms += "used to obtain an assembly.\nSuch assembly was re-classified "
         ms += "in bacteria, archaea and eukaryota/unknown files which were "
-        ms += "placed in the directory 'Classified_contigs'. "
+        ms += "placed in the directory \n'Classified_contigs'. "
         ms += "Each of these files may contain MORE than ONE "
-        ms += "eukaryotic or prokaryotic taxon or a mixture of them."
-        ms += "Hence, supervised binning or "
+        ms += "eukaryotic or prokaryotic taxon or a mixture of them. "
+        ms += "Hence, supervised binning or \n"
         ms += "manual inspection on the file of your interest MUST be done.\n"
         ms += "We recommend to apply MyCC software (Lin & Liao, 2016) "
-        ms += "(doi:10.1038/srep24175) or the Anvio platform (Eren et al 2015)"
-        ms += "(10.7717/peerj.1319)\n"
-        ms += "***\tEND OF WARNING***\n"
+        ms += "(doi:10.1038/srep24175) or \nAnvio (Eren et al 2015)"
+        ms += "(10.7717/peerj.1319)\n.  Please see Eukfinder user manual "
+        ms += "for binning\n*****\tEND OF WARNING\t****\n"
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
 
@@ -1823,8 +1876,9 @@ def Perform_long_seqs(user_args):
     stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
     log = 'Long_seqs_%s.log' % stamp
     sys.stdout = open(log, 'w')
-    ms = 'Eukfinder is using python %s' % platform.python_version()
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+    ms = 'Eukfinder v%s is using python %s' % (__version__,
+                                               platform.python_version())
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     tax_up, reads_path, redef_reads, plast_path, \
     map_id_path, acc2tax_path, n_cpu, max_plast, \
     e_value, pid, base_outname, cov,  cdb_path, mhlen = input_check_and_setup(
@@ -1871,22 +1925,22 @@ def Perform_long_seqs(user_args):
     os.chdir('..')
 
     # removing temporary files
-    '''
+    """
     try:
         shutil.rmtree(dirname_path)
         os.remove(new_reads)
     except:
         ms = 'Something went wrong when trying to remove:\n'
-        ms += '%s\nExiting program' % dirname_path
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=False)
+        ms += '%s\nTerminating program' % dirname_path
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
-    '''
+    """
     ms = '\n*****\tWARNING BEGINS\t*****\n'
     ms += 'The input file has been split in several files: bacteria, '
     ms += 'archaea, eukaryota and miscelaneous. Each may contain '
     ms += 'more than one eukaryotic or prokaryotic taxon.\nSupervised '
     ms += 'binning or manual inspection on the file of your interest '
-    ms += 'is MANDATORY\n*****\tEND OF WARNING\t*****\n'
+    ms += 'is REQUIRED\n*****\tEND OF WARNING\t*****\n'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     return 'Done'
@@ -1894,7 +1948,6 @@ def Perform_long_seqs(user_args):
 
 if __name__ == '__main__':
     import argparse
-
     if len(sys.argv) == 1:
         m = 'Try Eukfinder.py -h for more information'
         print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
@@ -1931,40 +1984,42 @@ if __name__ == '__main__':
 
     myargs = {
         '-n': ['--number-of-threads', str, 'Number of threads', True],
-        '-z': ['--number-of-chunks', str, 'Number of chunks to split a'
-                                          ' file', True],
+        '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
+               'file', True],
         '-t': ['--taxonomy-update', str, 'Set to True the first '
-                                         'time the program is used. '
-                                         'Otherwise set to False', True],
+               'time the program is used. Otherwise set to False', True],
         '-p': ['--plast-database', str, 'path to plast database', True],
         '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-                                      'plast database', True],
+               'plast database', True],
         '-p2': ['--ancillary-plast-database', str, 'path to plast '
-                                                   'database'],
+                'database'],
         '-m2': ['--ancillary-plast-id-map', str, 'path to taxonomy map '
-                                                 'for plast database'],
+                'for plast database'],
         '--force-pdb': ['--force_plast_database', str,
-                            'impose the declared plast_database'],
+                        'impose the declared plast_database'],
         '-a': ['--acc2tax-database', str, 'path to acc2tax database', True],
         '--cdb': ['--centrifuge-database', str, 'path to centrifuge '
-                                                'database', True],
+                  'database', True],
         '-e': ['--e-value', float, 'threshold for plast searches', True],
         '--pid': ['--percent_id', float, 'percentage identity for '
-                                         'plast searches', True],
+                  'plast searches', True],
         '--cov': ['--coverage', float, 'percentage coverage for '
-                                       'plast searches', True],
-        '--max_m': ['--max_memory', str, 'Maximum memomry allocated to '
-                                         'carry out an assembly', True],
-        '--mhlen': ['--min-hit-length', int, 'Maximum memomry allocated to '
-                                         'carry out an assembly', True],
+                  'plast searches', True],
+        '--max_m': ['--max_memory', str, 'Maximum memory allocated to '
+                    'carry out an assembly', True],
+        '-k': ['--kmers', str, 'kmers to use during assembly. '
+               'These must be odd and less than 128. default is 21,33,55',
+               False],
+        '--mhlen': ['--min-hit-length', int, 'Maximum memory allocated to '
+                    'carry out an assembly', True],
         '--pclass': ['--p-reads-class', str, 'Classification for '
-                                             'pair end reads', True],
+                     'pair end reads', True],
         '--uclass': ['--u-reads-class', str, 'Classification for '
-                                             'un-pair end reads', True]
+                     'un-pair end reads', True]
     }
 
     #  top-level parser
-    parser = argparse.ArgumentParser(prog='Eukfinder')
+    parser = argparse.ArgumentParser(prog='eukfinder')
     subparsers = parser.add_subparsers()
 
     #  ---  second level parser for pair mode ---  #
@@ -2080,5 +2135,5 @@ if __name__ == '__main__':
 
     # else:
     #     ms = 'Please select among read_prep, pair or unpair tasks'
-    #     ms += '\n exiting program'
-    #     print(ms, sep='\t', end='\n', file=sys.stdout, flush=False)
+    #     ms += '\n Terminating program'
+    #     print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)

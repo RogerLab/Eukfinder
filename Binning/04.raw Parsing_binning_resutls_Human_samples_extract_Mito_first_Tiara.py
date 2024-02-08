@@ -3,9 +3,14 @@ Parsing Human gut metagenomic samples for Blastocystis genomes
 Parsing_binning_results_Human_samples_extract_Mito_first_Tiara.py
 '''
 
-import os, sys, re                                                                          
+#   Info  #
+__author__ = 'Dandan Zhao'
+__email__ = 'd.zhao@dal.ca'
+__version__ = '1.0.0'
+#   End Info   #
+
+import os, sys, re               
 import argparse
-import os, sys
 import glob
 import subprocess
 import numpy as np

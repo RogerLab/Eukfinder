@@ -1,10 +1,14 @@
 """  
 05.raw .Extract_contigs.py
-Extract configs from fasta file.                                                                               
-Version 1, Nov 18th, 2019
-Author: D.Z.                                                
-"""                                                                                 
-import sys,re                                                                          
+Extract configs from fasta file.  
+"""                                       
+#   Info  #
+__author__ = 'Dandan Zhao'
+__email__ = 'd.zhao@dal.ca'
+__version__ = '1.0.0'
+#   End Info # 
+                                         
+import sys,re                                                          
 import argparse
 from Bio import SeqIO
 
