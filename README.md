@@ -136,11 +136,13 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <br>
 ## Publication/Citation
+
 Zhao, D., Salas-Leiva, D.E., Williams, S.K., Dunn, K.A. and Roger, A.J., 2023. Eukfinder: a pipeline to retrieve microbial eukaryote genomes from metagenomic sequencing data. bioRxiv, pp.2023-12.
 
 <br>
 <!-- CONTACT -->
 ## Contact
+
 d.zhao@dal.ca
 
 ds2000@cam.ac.uk
