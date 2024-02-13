@@ -19,26 +19,35 @@ Two centrifuge result files for paired and unpaired reads
 <br>
 ###   Output files:
 Directory Name: TempEukfinder/Classified_contigs
+<br>
 Five fasta files containing bacterial, archeal, eukaryotic, viral, and eukaryotic+unknown contigs:
+<br>
 Arch.fasta, Bact.fasta, Euk.fasta, Misc.fasta, EUnk.fasta 
+<br>
 
 ## 3. Long reads classification
 ###   Input files: long reads fasta file [long reads](https://perun.biochem.dal.ca/Metagenomics-Scavenger/test_files/long_reads_workflow/)
    longreads.fastq <br>
    
 ###   Output files:
-Five fasta files containing bacterial, archeal, eukaryotic, viral, and unknown contigs
 
 Directory Name: TempEukfinder
+<br>
 Five fasta files containing bacterial, archeal, eukaryotic, viral, and eukaryotic+unknown contigs:
+<br>
 Arch.fasta, Bact.fasta, Euk.fasta, Misc.fasta, EUnk.fasta 
+<br>
 
 ## 4. Assembled genome classification
    Input files: assembly (fasta file) <br>
 
-Directory Name: TempEukfinder
-Five fasta files containing bacterial, archeal, eukaryotic, viral, and eukaryotic+unknown contigs:
-Arch.fasta, Bact.fasta, Euk.fasta, Misc.fasta, EUnk.fasta    
+
 
 ###   Output files:
-Five fasta files containing bacterial, archeal, eukaryotic, viral, and unknown contigs
+
+Directory Name: TempEukfinder
+<br>
+Five fasta files containing bacterial, archeal, eukaryotic, viral, and eukaryotic+unknown contigs:
+<br>
+Arch.fasta, Bact.fasta, Euk.fasta, Misc.fasta, EUnk.fasta    
+<br>
