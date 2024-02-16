@@ -80,7 +80,12 @@ https://sourceforge.net/projects/sb2nhri/files/MyCC/
   Default reference databases can be downloaded from [Eukfinder Databases](https://perun.biochem.dal.ca/Metagenomics-Scavenger/)
 - Plast Database
 - Centrifuge Database
-- acc2tax Database
+- acc2tax Database (run Acc2Tax_DB_setup.py twice)
+
+```sh
+python3 Acc2Tax_DB_setup.py prot
+python3 Acc2Tax_DB_setup.py nucl
+```
 
  Users can flexibly customize the reference data (see [here](https://github.com/dzhao2019/eukfindertest/wiki/Build-a-customized-reference-database))
  
