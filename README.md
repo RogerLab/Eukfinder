@@ -19,8 +19,15 @@ spades, seqkit, trimmomatic, bowtie2, centrifuge, acc2tax, plast
 
 Python >= 3.7
 
-ete3, numpy, pandas, joblib, pyqt, bs4, dask, urllib3, multiprocessing, distributed
+ete3, numpy, pandas, joblib, pyqt, bs4, dask, urllib3, multiprocessing, distributed, toolz
 
+
+```sh
+pip install dask toolz ete3 numpy pandas joblib pyqt urllib3 multiprocessing distributed
+python -m pip install "dask[dataframe]" --upgrade
+pip install beautifulsoup4
+
+```
 
 ## Installation 
 
