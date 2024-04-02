@@ -1,6 +1,0 @@
-## Acc2Tax_DB
-run Acc2Tax_DB_setup.py twice:
-
-
-python3 Acc2Tax_DB_setup.py prot
-python3 Acc2Tax_DB_setup.py nucl
