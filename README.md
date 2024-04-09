@@ -19,21 +19,14 @@ spades, seqkit, trimmomatic, bowtie2, centrifuge, acc2tax, plast
 
 Python >= 3.7
 
-ete3, numpy, pandas, joblib, pyqt, bs4, dask, urllib3, multiprocessing, distributed, toolz
+ete3, numpy, pandas, joblib, pyqt 
 
-
-```sh
-pip install dask toolz ete3 numpy pandas joblib pyqt urllib3 multiprocessing distributed
-python -m pip install "dask[dataframe]" --upgrade
-pip install beautifulsoup4
-
-```
 
 ## Installation 
 
-A step-by-step tutorial on installation.
+A step-by-step installation tutorial.
 
-Note: We are working to making Eukfinder available on Bioconda, so that this tutorial may be frequently updated.
+Note: We are working on making Eukfinder available on Bioconda, so that this tutorial may be frequently updated.
 
 ### 1. Clone this repository
 
@@ -80,12 +73,10 @@ https://sourceforge.net/projects/sb2nhri/files/MyCC/
   Default reference databases can be downloaded from [Eukfinder Databases](https://perun.biochem.dal.ca/Metagenomics-Scavenger/)
 - Plast Database
 - Centrifuge Database
-- acc2tax Database (run Acc2Tax_DB_setup.py twice)
+- acc2tax Database 
+- Human Genome for read decontamination
+- Read Adapters for Illumina sequencing
 
-```sh
-python3 Acc2Tax_DB_setup.py prot
-python3 Acc2Tax_DB_setup.py nucl
-```
 
  Users can flexibly customize the reference data (see [here](https://github.com/dzhao2019/eukfindertest/wiki/Build-a-customized-reference-database))
  
