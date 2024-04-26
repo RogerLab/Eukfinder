@@ -70,7 +70,7 @@ https://sourceforge.net/projects/sb2nhri/files/MyCC/
 
 ### 4. Download or build databases
  
-  Default reference databases can be downloaded from [Eukfinder Databases](https://perun.biochem.dal.ca/Metagenomics-Scavenger/)
+  Default reference databases can be downloaded from [Eukfinder Databases](https://perun.biochem.dal.ca/Eukfinder/)
 - Plast Database
 - Centrifuge Database
 - acc2tax Database 
