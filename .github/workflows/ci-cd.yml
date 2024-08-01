@@ -14,13 +14,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.8
+          activate-environment: eukfinder
+          auto-update-conda: true
+          environment-file: eukfinder_env.yml
+          cache-builds: true
 
       - name: Install dependencies
         run: |
@@ -29,7 +32,7 @@ jobs:
           sudo apt-get install -y tar
         continue-on-error: false
 
-      - name: Set up PLAST binaries
+      - name: Setup PLAST binaries
         run: |
           tar -zxf plastbinary_linux_v2.3.2.tar.gz
           echo export PATH=$PWD/plastbinary_linux_v2.3.2/build/bin:$PATH >> ~/.profile
@@ -53,3 +56,15 @@ jobs:
         run: |
           cd acc2tax
           ./acc2tax --help || { echo 'acc2tax build failed'; exit 1; }
+
+      - name: Setup eukfinder alias
+        run: |
+          echo alias Eukfinder="python $PWD/bin/Eukfinder.py" >> ~/.profile
+
+      - name: Verify eukfinder sub-calls
+        run: |
+          source ~/.profile
+          Eukfinder read_prep -h
+          Eukfinder short_seqs -h
+          Eukfinder long_seqs -h
+          
