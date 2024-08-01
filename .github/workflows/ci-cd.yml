@@ -30,17 +30,14 @@ jobs:
           sudo wget https://github.com/PLAST-software/plast-library/releases/download/v2.3.2/plastbinary_linux_v2.3.2.tar.gz
           sudo apt-get update
           sudo apt-get install -y tar
-        continue-on-error: false
 
       - name: Setup PLAST binaries
         run: |
           tar -zxf plastbinary_linux_v2.3.2.tar.gz
-          echo export PATH=$PWD/plastbinary_linux_v2.3.2/build/bin:$PATH >> ~/.profile
-        continue-on-error: false
 
       - name: Verify PLAST installation
         run: |
-          source ~/.profile
+          export PATH=$PWD/plastbinary_linux_v2.3.2/build/bin:$PATH
           plast -h || { echo 'PLAST installation failed'; exit 1; }
 
       - name: Clone acc2tax repository
@@ -57,13 +54,9 @@ jobs:
           cd acc2tax
           ./acc2tax --help || { echo 'acc2tax build failed'; exit 1; }
 
-      - name: Setup eukfinder alias
-        run: |
-          echo alias Eukfinder="python $PWD/bin/Eukfinder.py" >> ~/.profile
-
       - name: Verify eukfinder sub-calls
         run: |
-          source ~/.profile
+          alias Eukfinder="python $PWD/bin/Eukfinder.py"
           Eukfinder read_prep -h
           Eukfinder short_seqs -h
           Eukfinder long_seqs -h
