@@ -33,13 +33,12 @@ jobs:
       - name: Set up PLAST binaries
         run: |
           tar -zxf plastbinary_linux_v2.3.2.tar.gz
-          echo "PLAST_BINARIES_DIR=$GITHUB_WORKSPACE/plastbinary_linux_v2.3.2/build/bin" >> $GITHUB_ENV
-          echo "$PLAST_BINARIES_DIR" >> $GITHUB_PATH
-          echo "PLAST binaries added to PATH."
+          echo export PATH=$PWD/plastbinary_linux_v2.3.2/build/bin:$PATH >> ~/.profile
         continue-on-error: false
 
       - name: Verify PLAST installation
         run: |
+          source ~/.profile
           plast -h || { echo 'PLAST installation failed'; exit 1; }
 
       - name: Clone acc2tax repository
