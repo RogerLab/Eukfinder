@@ -28,16 +28,28 @@ jobs:
           sudo wget https://github.com/PLAST-software/plast-library/releases/download/v2.3.2/plastbinary_linux_v2.3.2.tar.gz
           sudo apt-get update
           sudo apt-get install -y tar
+        continue-on-error: false
 
       - name: Set up PLAST binaries
         run: |
           tar -zxf plastbinary_linux_v2.3.2.tar.gz
           export PATH=$PWD/plastbinary_linux_v2.3.2/bin:$PATH
-          echo $PATH  # Print the PATH to verify it includes the PLAST binaries
+        continue-on-error: false
+
+      - name: Verify PLAST installation
+        run: |
+          plast -h || { echo 'PLAST installation failed'; exit 1; }
 
       - name: Clone acc2tax repository
         run: |
           git clone https://github.com/richardmleggett/acc2tax.git
+
+      - name: Build acc2tax
+        run: |
           cd acc2tax
-          cc -o acc2tax acc2tax.c
-          ./acc2tax --help  # Run the compiled binary to verify it's working
+          gcc -o acc2tax acc2tax.c
+
+      - name: Verify acc2tax build
+        run: |
+          cd acc2tax
+          ./acc2tax --help || { echo 'acc2tax build failed'; exit 1; }
