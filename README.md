@@ -77,6 +77,10 @@ https://sourceforge.net/projects/sb2nhri/files/MyCC/
 - Human Genome for read decontamination
 - Read Adapters for Illumina sequencing
 
+```shell
+./download_db.sh
+```
+
 
  Users can flexibly customize the reference data (see [here](https://github.com/dzhao2019/eukfindertest/wiki/Build-a-customized-reference-database))
  
