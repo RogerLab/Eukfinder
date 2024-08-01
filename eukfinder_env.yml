@@ -1,6 +1,4 @@
-package:
-  name: eukfindertest
-  version: {{ 1.2.3 }}
+name: eukfinder
 
 channels:
   - conda-forge
