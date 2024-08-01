@@ -56,11 +56,8 @@ jobs:
 
       - name: Verify eukfinder sub-calls
         run: |
-          ls -l
           cd bin/
-          ls -l
-          alias Eukfinder='python Eukfinder.py'
-          Eukfinder read_prep -h
-          Eukfinder short_seqs -h
-          Eukfinder long_seqs -h
+          python Eukfinder.py read_prep -h
+          python Eukfinder short_seqs -h
+          python Eukfinder long_seqs -h
           
