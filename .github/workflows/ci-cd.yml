@@ -24,6 +24,12 @@ jobs:
           auto-update-conda: true
           environment-file: eukfinder_env.yml
           cache-builds: true
+          use-mamba: true
+
+      - name: Verify Conda env
+        run: |
+          mamba list
+          mamba activate eukfinder
 
       - name: Install dependencies
         run: |
