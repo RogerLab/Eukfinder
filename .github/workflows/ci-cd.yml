@@ -12,6 +12,9 @@ jobs:
   build-linux-x86-64:
     name: Linux x86-64
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
       - name: Checkout repository
@@ -27,7 +30,6 @@ jobs:
 
       - name: Verify Conda env
         run: |
-          source $CONDA/../etc/profile.d/conda.sh
           mamba list
           mamba activate eukfinder
 
