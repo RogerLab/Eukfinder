@@ -33,7 +33,7 @@ jobs:
       - name: Set up PLAST binaries
         run: |
           tar -zxf plastbinary_linux_v2.3.2.tar.gz
-          export PATH=$PWD/plastbinary_linux_v2.3.2/bin:$PATH
+          export PATH=$PWD/plastbinary_linux_v2.3.2/build/bin:$PATH
         continue-on-error: false
 
       - name: Verify PLAST installation
