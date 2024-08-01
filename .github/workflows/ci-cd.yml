@@ -58,6 +58,6 @@ jobs:
         run: |
           cd bin/
           python Eukfinder.py read_prep -h
-          python Eukfinder short_seqs -h
-          python Eukfinder long_seqs -h
+          python Eukfinder.py short_seqs -h
+          python Eukfinder.py long_seqs -h
           
