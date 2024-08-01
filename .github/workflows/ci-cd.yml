@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-linux-x86-64:
+    name: Linux x86-64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          sudo wget https://github.com/PLAST-software/plast-library/releases/download/v2.3.2/plastbinary_linux_v2.3.2.tar.gz
+          sudo apt-get update
+          sudo apt-get install -y tar
+
+      - name: Set up PLAST binaries
+        run: |
+          tar -zxf plastbinary_linux_v2.3.2.tar.gz
+          export PATH=$PWD/plastbinary_linux_v2.3.2/bin:$PATH
+          echo $PATH  # Print the PATH to verify it includes the PLAST binaries
+
+      - name: Clone acc2tax repository
+        run: |
+          git clone https://github.com/richardmleggett/acc2tax.git
+          cd acc2tax
+          cc -o acc2tax acc2tax.c
+          ./acc2tax --help  # Run the compiled binary to verify it's working
