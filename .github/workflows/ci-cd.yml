@@ -56,7 +56,7 @@ jobs:
 
       - name: Verify eukfinder sub-calls
         run: |
-          alias Eukfinder="python $PWD/bin/Eukfinder.py"
+          alias Eukfinder="python $(PWD)/bin/Eukfinder.py"
           Eukfinder read_prep -h
           Eukfinder short_seqs -h
           Eukfinder long_seqs -h
