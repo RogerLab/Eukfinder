@@ -3,11 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - main
-      - 4-setup-cicd
+      - '**'
   pull_request:
     branches:
-      - main
+      - '**'
 
 jobs:
   build-linux-x86-64:
