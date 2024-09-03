@@ -63,10 +63,13 @@ jobs:
           cd acc2tax
           ./acc2tax --help || { echo 'acc2tax build failed'; exit 1; }
 
+      - name: Generate executable
+        run: |
+          pip install .
+
       - name: Verify eukfinder sub-calls
         run: |
-          cd bin/
-          python Eukfinder.py read_prep -h
-          python Eukfinder.py short_seqs -h
-          python Eukfinder.py long_seqs -h
+          eukfinder read_prep -h
+          eukfinder short_seqs -h
+          eukfinder long_seqs -h
           

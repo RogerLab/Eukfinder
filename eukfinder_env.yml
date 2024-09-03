@@ -17,3 +17,4 @@ dependencies:
   - trimmomatic
   - centrifuge
   - bowtie2
+  - pip
