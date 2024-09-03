@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from subprocess import PIPE, run
 from joblib import Parallel, delayed
+import argparse
 
 
 #   Info  #
@@ -1945,80 +1946,68 @@ def Perform_long_seqs(user_args):
 
     return 'Done'
 
+def short_seqs(args):
+    bname = args.o
+    reads = args.r1, args.r2, args.ur1, args.ur2
+    classification = args.pclass, args.uclass
+    paths = args.m, args.a, args.p, args.cdb, args.m2, args.p2
+    params = args.n, args.t, args.e, args.z, args.mhlen
+    return reads, classification, paths, params, bname
 
-if __name__ == '__main__':
-    import argparse
-    if len(sys.argv) == 1:
-        m = 'Try Eukfinder.py -h for more information'
-        print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
-        sys.exit(1)
+def read_prep(args):
+    bname = args.o
+    reads = args.r1, args.r2
+    host = args.hg
+    threads = args.n
+    adapters = args.i
+    params = args.hcrop, args.l, args.t, args.wsize, \
+        args.qscore, args.mlen, args.mhlen
+    return bname, reads, threads, adapters, params, host
 
+def long_seqs(args):
+    bname = args.o
+    reads = args.u
+    paths = args.m, args.a, args.p
+    params = args.n, args.t, args.e, args.z, args.mhlen
+    return reads, paths, params, bname
 
-    def short_seqs(args):
-        bname = args.o
-        reads = args.r1, args.r2, args.ur1, args.ur2
-        classification = args.pclass, args.uclass
-        paths = args.m, args.a, args.p, args.cdb, args.m2, args.p2
-        params = args.n, args.t, args.e, args.z, args.mhlen
-        return reads, classification, paths, params, bname
-
-
-    def read_prep(args):
-        bname = args.o
-        reads = args.r1, args.r2
-        host = args.hg
-        threads = args.n
-        adapters = args.i
-        params = args.hcrop, args.l, args.t, args.wsize, \
-                 args.qscore, args.mlen, args.mhlen
-        return bname, reads, threads, adapters, params, host
-
-
-    def long_seqs(args):
-        bname = args.o
-        reads = args.u
-        paths = args.m, args.a, args.p
-        params = args.n, args.t, args.e, args.z, args.mhlen
-        return reads, paths, params, bname
-
-
+def parse_arguments():
     myargs = {
         '-n': ['--number-of-threads', str, 'Number of threads', True],
         '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
-               'file', True],
+                                          'file', True],
         '-t': ['--taxonomy-update', str, 'Set to True the first '
-               'time the program is used. Otherwise set to False', True],
+                                         'time the program is used. Otherwise set to False', True],
         '-p': ['--plast-database', str, 'path to plast database', True],
         '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-               'plast database', True],
+                                      'plast database', True],
         '-p2': ['--ancillary-plast-database', str, 'path to plast '
-                'database'],
+                                                   'database'],
         '-m2': ['--ancillary-plast-id-map', str, 'path to taxonomy map '
-                'for plast database'],
+                                                 'for plast database'],
         '--force-pdb': ['--force_plast_database', str,
                         'impose the declared plast_database'],
         '-a': ['--acc2tax-database', str, 'path to acc2tax database', True],
         '--cdb': ['--centrifuge-database', str, 'path to centrifuge '
-                  'database', True],
+                                                'database', True],
         '-e': ['--e-value', float, 'threshold for plast searches', True],
         '--pid': ['--percent_id', float, 'percentage identity for '
-                  'plast searches', True],
+                                         'plast searches', True],
         '--cov': ['--coverage', float, 'percentage coverage for '
-                  'plast searches', True],
+                                       'plast searches', True],
         '--max_m': ['--max_memory', str, 'Maximum memory allocated to '
-                    'carry out an assembly', True],
+                                         'carry out an assembly', True],
         '-k': ['--kmers', str, 'kmers to use during assembly. '
-               'These must be odd and less than 128. default is 21,33,55',
+                               'These must be odd and less than 128. default is 21,33,55',
                False],
         '--mhlen': ['--min-hit-length', int, 'Maximum memory allocated to '
-                    'carry out an assembly', True],
+                                             'carry out an assembly', True],
         '--pclass': ['--p-reads-class', str, 'Classification for '
-                     'pair end reads', True],
+                                             'pair end reads', True],
         '--uclass': ['--u-reads-class', str, 'Classification for '
-                     'un-pair end reads', True]
+                                             'un-pair end reads', True]
     }
 
-    #  top-level parser
     parser = argparse.ArgumentParser(prog='eukfinder')
     subparsers = parser.add_subparsers()
 
@@ -2122,18 +2111,23 @@ if __name__ == '__main__':
     parser_short_seqs.set_defaults(func=short_seqs)
     parser_read_prep.set_defaults(func=read_prep)
     parser_long_seqs.set_defaults(func=long_seqs)
-    args = parser.parse_args()
-    dic_args = vars(args)
-    # parser.print_help()
 
+    return parser.parse_args()
+
+def main():
+    args = parse_arguments()
+
+    if len(sys.argv) == 1:
+        print('Try Eukfinder.py -h for more information', sep=' ', end='\n', file=sys.stdout, flush=True)
+        sys.exit(1)
+
+    dic_args = vars(args)
     if dic_args['func'].__name__ == 'read_prep':
         Perform_prep(dic_args)
-    if dic_args['func'].__name__ == 'short_seqs':
+    elif dic_args['func'].__name__ == 'short_seqs':
         Perform_eukfinder(dic_args)
-    if dic_args['func'].__name__ == 'long_seqs':
+    elif dic_args['func'].__name__ == 'long_seqs':
         Perform_long_seqs(dic_args)
 
-    # else:
-    #     ms = 'Please select among read_prep, pair or unpair tasks'
-    #     ms += '\n Terminating program'
-    #     print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
+if __name__ == '__main__':
+    main()
