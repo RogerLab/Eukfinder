@@ -65,7 +65,7 @@ jobs:
 
       - name: Generate executable
         run: |
-          pip install .
+          python setup.py install --single-version-externally-managed --record=record.txt
 
       - name: Verify eukfinder sub-calls
         run: |

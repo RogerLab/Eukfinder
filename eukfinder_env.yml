@@ -6,9 +6,9 @@ channels:
   - defaults
 
 dependencies:
-  - python=3.10
+  - python
   - ete3
-  - numpy=2.1.1
+  - numpy
   - pandas
   - joblib
   - pyqt=5
@@ -17,4 +17,3 @@ dependencies:
   - trimmomatic
   - centrifuge
   - bowtie2
-  - pip
