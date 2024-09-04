@@ -6,9 +6,9 @@ channels:
   - defaults
 
 dependencies:
-  - python=3
+  - python=3.10
   - ete3
-  - numpy
+  - numpy=2.1.1
   - pandas
   - joblib
   - pyqt=5
