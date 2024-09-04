@@ -1,4 +1,7 @@
 # Eukfinder
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![CI](https://github.com/RogerLab/Eukfinder/workflows/Build/badge.svg)
+
 A bioinformatics tool designed to enable rapid recovery of high-quality draft genomes of microbial eukaryotes from various environmental metagenomic samples.
 
 - reference-independent and cultivation-free
