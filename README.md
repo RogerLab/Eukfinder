@@ -35,6 +35,8 @@ Note: We are working on making Eukfinder available on Bioconda, so that this tut
 
 ```sh
 git clone https://github.com/RogerLab/Eukfinder.git
+cd Eukfinder
+python setup.py install
 ```
 
 <br>
