@@ -100,8 +100,3 @@ d.zhao@dal.ca
 
 ds2000@cam.ac.uk
 
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
