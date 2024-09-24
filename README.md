@@ -21,11 +21,11 @@ Schematic representation of eukfinder workflows. eukfinder is a taxonomic classi
 ![Graphical_abstract](https://github.com/RogerLab/Eukfinder/assets/39600837/1d9e690e-be40-4255-b00a-07742219d92e)
 
 ## Installation
-
-### 1. Install from conda
+Anaconda or miniconda required*
+### 1. Created environment and install eukfinder
 
 ```sh
-conda install bioconda::eukfinder
+conda create -n eukfinder -c bioconda eukfinder
 ```
 
 ### 2. Download or build databases
@@ -43,6 +43,11 @@ conda install bioconda::eukfinder
 
  Users can flexibly customize the reference data (see [here](https://github.com/dzhao2019/eukfindertest/wiki/Build-a-customized-reference-database))
  
+### 3. (!) Activate eukfinder environment before running the command
+
+```shell
+source activate eukfinder
+```
 
 <!-- USAGE EXAMPLES -->
 ## Usage
