@@ -2,11 +2,36 @@
 
 ## Overview
 
-Here are the instructions on how to use different methods to build custom Centrifuge and Plast databases
+In metagenomic and genomic analyses, the ability to accurately classify sequences—whether contigs or raw reads—is crucial for understanding the composition of complex microbial and eukaryotic communities. Eukfinder leverages classification tools like Centrifuge to determine which sequences originate from eukaryotic organisms. To perform these classifications, Centrifuge relies on specialized databases that link each sequence to its corresponding taxonomy. By default, users may rely on pre-built databases; however, constructing custom Centrifuge databases allows for greater precision and adaptability to a project’s unique requirements.
+
+Building a custom database ensures that you target the exact taxa, strains, or groups of interest, streamline your analyses, and improve classification accuracy. Whether you need a broad reference set (e.g., all archaeal, bacterial, and viral genomes), a focused reference for a particular genus or species, or a hand-curated set of genomes from a given clade or timeframe, the methods described here provide multiple approaches to assembling the necessary data and indexing it for Centrifuge.
 
 ## Building Centrifuge Databases
 
-This guide describes several approaches to create custom Centrifuge databases.  
+This document outlines three primary strategies for creating custom Centrifuge databases:
+
+1. **Using Centrifuge’s Built-In Tools**
+Leverage the centrifuge-download utility to directly fetch and assemble complete datasets (like archaeal, bacterial, and viral references or the NCBI nt database) from official sources. This method is ideal when working with well-established, large-scale reference sets.
+
+2. **Using ncbi-genome-download**
+Target specific organisms, taxa, or genera by employing the ncbi-genome-download command-line tool. This approach lets you define your dataset more narrowly, ensuring that only genomes fitting your scientific question are included.
+
+3. **Using a Custom Python Script and Assembly Summaries**
+Gain full control over database composition by manually selecting accession numbers from NCBI, applying filtering criteria (like assembly level or release date), and downloading sequences using a Python script. This method grants maximum customization for specialized studies that require curated sets of genomes.
+
+For each approach, you’ll generate or retrieve:
+
+- **Genomic FASTA files**: The raw nucleotide sequences that form the building blocks of your database.
+- **Taxonomy files**: nodes.dmp and names.dmp, which are essential for linking sequences to their respective taxonomic identifiers.
+- **Mapping files**: Sequence-to-TaxID maps that align each genome or sequence header to a taxonomic ID, enabling Centrifuge to place sequences within the correct taxonomic branch.
+  
+After constructing the database, you’ll run centrifuge-build to create the index files that Centrifuge needs for rapid classification. Once indexed, these databases can be integrated into Eukfinder’s workflow, enabling refined eukaryotic sequence detection and improved downstream analyses such as eukaryotic binning, phylogenetic studies, and ecological assessments.
+
+By following the steps in this guide, you’ll have the flexibility to customize your reference databases, improve classification accuracy, and adapt Eukfinder to the evolving demands of your research projects.  
+
+- Method 1: Ideal for large, well-established databases like complete bacterial/archaeal/viral sets or nt.
+- Method 2: Good for targeted downloads from NCBI based on genus or taxonomic group.
+- Method 3: Fully customizable approach using accession numbers and assembly summaries for highly specific datasets.
 
 ### Method 1: Using the Centrifuge Manual Instructions
 
@@ -73,7 +98,10 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table gi_taxid_nucl.map \
 
 ### Method 2: Using ncbi-genome-download
 
-Download the desired genomes by specifying a genus or taxonomic group. For instance, to download Blastocystis genomes:
+Download the desired genomes by specifying a genus or taxonomic group. 
+**Prerequisites**: [ncbi-genome-download](https://github.com/kblin/ncbi-genome-download)
+
+For instance, to download Blastocystis genomes:
 
 ```sh
 ncbi-genome-download --genera Blastocystis -p 4 -r 10 --flat-output --progress-bar --formats fasta,assembly-report protozoa
