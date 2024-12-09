@@ -41,13 +41,13 @@ See [Centrifuge manual](https://ccb.jhu.edu/software/centrifuge/manual.shtml#dat
 
 You can retrieve reference genomes and taxonomy files directly from NCBI using the centrifuge-download utility. For example, to build a database containing archaeal, bacterial, and viral genomes:
 
-Obtain the NCBI taxonomy files:
+1. Obtain the NCBI taxonomy files:
 
 ```sh
 centrifuge-download -o taxonomy taxonomy
 ```
 
-Download all complete archaeal, bacterial, and viral genomes and mask low-complexity regions:
+2. Download all complete archaeal, bacterial, and viral genomes and mask low-complexity regions:
 
 ```sh
 centrifuge-download -o library -m -d "archaea,bacteria,viral" refseq > seqid2taxid.map
@@ -55,13 +55,13 @@ centrifuge-download -o library -m -d "archaea,bacteria,viral" refseq > seqid2tax
 
 The seqid2taxid.map file maps each sequence ID to its corresponding taxonomy ID.
 
-Merge all downloaded sequences into one file:
+3. Merge all downloaded sequences into one file:
 
 ```sh
 cat library/*/*.fna > input-sequences.fna
 ```
 
-Build the Centrifuge index with multiple threads:
+4. Build the Centrifuge index:
 
 ```sh
 centrifuge-build -p 4 --conversion-table seqid2taxid.map \
@@ -73,18 +73,20 @@ centrifuge-build -p 4 --conversion-table seqid2taxid.map \
 
 The NCBI nt database is a comprehensive, non-redundant collection of nucleotide sequences. After downloading the nt FASTA file and the corresponding GI-to-TaxID map, you can construct a Centrifuge index as follows:
 
-Download and decompress the nt database:
+1. Download and decompress the nt database:
 
 ```sh
 wget ftp://ftp.ncbi.nih.gov/blast/db/FASTA/nt.gz
 gunzip nt.gz && mv nt nt.fa
 ```
 
-Retrieve the GI-to-TaxID mapping:
+2. Retrieve the GI-to-TaxID mapping:
 
 ```sh
 wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/gi_taxid_nucl.dmp.gz
 gunzip -c gi_taxid_nucl.dmp.gz | sed 's/^/gi|/' > gi_taxid_nucl.map
+
+3. Build the Centrifuge index:
 Build the Centrifuge index using more threads and a custom --bmax parameter to manage memory:
 
 ```sh
@@ -98,7 +100,7 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table gi_taxid_nucl.map \
 
 ### Method 2: Using ncbi-genome-download
 
-Download the desired genomes by specifying a genus or taxonomic group. 
+1. Download the desired genomes by specifying a genus or taxonomic group. 
 
 **Prerequisites**: [ncbi-genome-download](https://github.com/kblin/ncbi-genome-download)
 
@@ -108,29 +110,29 @@ For instance, to download Blastocystis genomes:
 ncbi-genome-download --genera Blastocystis -p 4 -r 10 --flat-output --progress-bar --formats fasta,assembly-report protozoa
 ```
 
-Combine all downloaded FASTA files into a single file:
+2. Combine all downloaded FASTA files into a single file:
 
 ```sh
 cat *.fna > genome.fasta
 ```
 
-Generate the sequence-to-taxid mapping file using a custom script:
+3. Generate the sequence-to-taxid mapping file using a custom script:
 
-Example script available here:[Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
+Example script available here: [Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
 
 ```sh
 python3 Build_Centrifuge_map_from_assembly_report.py
 cat *_genome2taxid.txt > genome2taxid.map
 ```
 
-Download taxonomy files:
+4. Download taxonomy files:
 
 ```sh
 centrifuge-download -o taxonomy taxonomy
 # This creates taxonomy/nodes.dmp and taxonomy/names.dmp
 ```
 
-Build the Centrifuge index:
+5. Build the Centrifuge index:
 
 ```sh
 centrifuge-build -p 16 --bmax 1342177280 --conversion-table genome2taxid.map \
@@ -162,7 +164,8 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refs
 ```
 
 3. Use the provided Python script to download genomes and produce the mapping file:
-Example script:[genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
+   
+Example script: [genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
 
 ```sh
 python3 genome_download_map.py assembly_summary_genbank.txt genome_list.txt
