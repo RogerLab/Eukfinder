@@ -1,4 +1,4 @@
-# eukfinder
+# Eukfinder
 [![Bioconda platforms](https://img.shields.io/conda/pn/bioconda/eukfinder?style=flag)](https://anaconda.org/bioconda/eukfinder)
 [![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/eukfinder.svg?style=flag&label=Bioconda%20install)](https://anaconda.org/bioconda/eukfinder)
 
