@@ -264,26 +264,27 @@ Before building a custom Plast database:
 
    Generate the Sequence-to-TaxID Map: Use a custom Python script (similar to the ones used for Centrifuge) to generate a sequence-to-taxid map for each genome. This step will link each sequence header to its taxonomic identifier, facilitating downstream analysis.
 
-Method 2: Using Custom Genome Selection from NCBI
+#### Method 2: Using Custom Genome Selection from NCBI
 
-1. Identify Accession Numbers:
+1. **Identify Accession Numbers**:
 
    - Visit [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nuccore).
    - Set search criteria to "Genome".
    - Apply filters (e.g., reference genomes, MAGs, assembly level, release date).
    - Download the results table and extract accession numbers from the first column.
 
-2. Download Assembly Summaries: Choose GenBank or RefSeq assembly summary files:
+2. **Download Assembly Summaries**: Choose GenBank or RefSeq assembly summary files:
 
    GenBank Assembly Summary
    RefSeq Assembly Summary
 
-3. Run a Python Download Script:
+3. **Run a Python Download Script**:
    Use a provided Python script (such as genome_download_map.py in Eukfinder’s Building_custom_DB directory) to:
 
-Download the genomes using the accession numbers.
-Generate a combined FASTA file (genome.fasta).
-Create a sequence-to-taxid map file (genome2taxid.map).
+   Download the genomes using the accession numbers.
+   Generate a combined FASTA file (genome.fasta).
+   Create a sequence-to-taxid map file (genome2taxid.map).
+   
    After running the script:
 
    ```bash
