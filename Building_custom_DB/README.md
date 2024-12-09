@@ -1,10 +1,10 @@
-# Building Custom Eukfinder Databases
+# Building Custom Databases
 
 ## Overview
 
 Here are the instructions on how to use different methods to build custom Centrifuge and Plast databases
 
-## Building Custom Centrifuge Databases
+## Building Centrifuge Databases
 
 This guide describes several approaches to create custom Centrifuge databases.  
 
@@ -160,4 +160,4 @@ Additional Notes:
 
 
 
-## Plast databases
+## Building Plast databases
