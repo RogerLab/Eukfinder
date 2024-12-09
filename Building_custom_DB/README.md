@@ -122,8 +122,11 @@ cat *.fna > genome.fasta
 
 Example script available here: [Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
 This script will extract the organism name, taxid, and a list of sequence IDs from an assembly report file (XXX_assembly_report.txt), and generate a corresponding XXX_genome2taxid.txt for the genome file XXX_genomic.fna. XXX here represent the genome accession number and assemble name, for example: 
+
 genome file: GCF_000743755.1_ASM74375v1_genomic.fna               (Download in step 1)
+
 assembly report: GCF_000743755.1_ASM74375v1_assembly_report.txt    (Download in step 1)
+
 map file: GCF_000743755.1_ASM74375v1_genomic_seq2taxid_map.txt    (output from script: Build_Centrifuge_map_from_assembly_report.py)
 
 
