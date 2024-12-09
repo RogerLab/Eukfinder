@@ -12,7 +12,7 @@ This guide describes several approaches to create custom Centrifuge databases.
 
 See [Centrifuge manual](https://ccb.jhu.edu/software/centrifuge/manual.shtml#database-download-and-index-building) for details.
 
-1.1 Downloading Genomes Directly with centrifuge-download
+#### 1.1 Downloading Genomes Directly with centrifuge-download
 
 You can retrieve reference genomes and taxonomy files directly from NCBI using the centrifuge-download utility. For example, to build a database containing archaeal, bacterial, and viral genomes:
 
@@ -44,7 +44,7 @@ centrifuge-build -p 4 --conversion-table seqid2taxid.map \
                  input-sequences.fna abv
 ```
 
-1.2 Building an Index from the NCBI nt Database
+#### 1.2 Building an Index from the NCBI nt Database
 
 The NCBI nt database is a comprehensive, non-redundant collection of nucleotide sequences. After downloading the nt FASTA file and the corresponding GI-to-TaxID map, you can construct a Centrifuge index as follows:
 
@@ -86,10 +86,9 @@ cat *.fna > genome.fasta
 ```
 
 Generate the sequence-to-taxid mapping file using a custom script:
+Example script available here:[Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
 
 ```sh
-# Example script available here:[Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
-# https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py
 python3 Build_Centrifuge_map_from_assembly_report.py
 cat *_genome2taxid.txt > genome2taxid.map
 ```
@@ -119,7 +118,7 @@ Search the NCBI Nucleotide database (https://www.ncbi.nlm.nih.gov/nuccore) for t
 - Filter results (reference genomes, MAGs, assembly level, release date)
 - Download the table and extract accession numbers from the first column	
 
-Assume resulted list of geome accession number is in the file genome_list.txt
+Assume resulted list of geome accession number is in the file **genome_list.txt**.
 
 2. Download the Assembly Summary File:
 
@@ -132,16 +131,16 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refs
 ```
 
 3. Use the provided Python script to download genomes and produce the mapping file:
+Example script:[genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
+
 
 ```sh
-# Example script:[genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
-# https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py
 python3 genome_download_map.py assembly_summary_genbank.txt genome_list.txt
 ```
 
 ```sh
 cat *.fna > genome.fasta
-cat *_genome2taxid.txt > genome2taxid.map
+cat *genome2taxid.txt > genome2taxid.map
 ```
 
 4. Build the Centrifuge index:
@@ -152,12 +151,11 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table genome2taxid.map \
                  genome.fasta genome
 ```
 
-Additional Notes:
+**Additional Notes**
 
-1. Always ensure that sequence headers and mapping files align with the taxonomy files (nodes.dmp and names.dmp).
-2. Test small datasets first to confirm that the pipeline is set up correctly.
-3. For more detailed instructions and troubleshooting, consult the official Centrifuge manual and other provided scripts’ documentation.
-
+- Always ensure that sequence headers and mapping files align with the taxonomy files (nodes.dmp and names.dmp).
+- Test small datasets first to confirm that the pipeline is set up correctly.
+- For more detailed instructions and troubleshooting, consult the official Centrifuge manual and other provided scripts’ documentation.
 
 
 ## Building Plast databases
