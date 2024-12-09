@@ -99,6 +99,7 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table gi_taxid_nucl.map \
 ### Method 2: Using ncbi-genome-download
 
 Download the desired genomes by specifying a genus or taxonomic group. 
+
 **Prerequisites**: [ncbi-genome-download](https://github.com/kblin/ncbi-genome-download)
 
 For instance, to download Blastocystis genomes:
@@ -114,6 +115,7 @@ cat *.fna > genome.fasta
 ```
 
 Generate the sequence-to-taxid mapping file using a custom script:
+
 Example script available here:[Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
 
 ```sh
@@ -139,6 +141,7 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table genome2taxid.map \
 ### Method 3: Using a Custom Python Script
 
 1. Identify Genome Accession Numbers:
+   
 Search the NCBI Nucleotide database (https://www.ncbi.nlm.nih.gov/nuccore) for the organism of interest. 
 
 - Go to [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nuccore)
@@ -160,7 +163,6 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/assembly_summary_refs
 
 3. Use the provided Python script to download genomes and produce the mapping file:
 Example script:[genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
-
 
 ```sh
 python3 genome_download_map.py assembly_summary_genbank.txt genome_list.txt
