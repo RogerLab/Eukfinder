@@ -85,6 +85,7 @@ gunzip nt.gz && mv nt nt.fa
 ```sh
 wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/gi_taxid_nucl.dmp.gz
 gunzip -c gi_taxid_nucl.dmp.gz | sed 's/^/gi|/' > gi_taxid_nucl.map
+```
 
 3. Build the Centrifuge index:
 Build the Centrifuge index using more threads and a custom --bmax parameter to manage memory:
@@ -104,9 +105,10 @@ centrifuge-build -p 16 --bmax 1342177280 --conversion-table gi_taxid_nucl.map \
 
 **Prerequisites**: [ncbi-genome-download](https://github.com/kblin/ncbi-genome-download)
 
-For instance, to download Blastocystis genomes:
+For instance, to download *Blastocystis* genomes:
 
 ```sh
+source activate ncbi-genome-download
 ncbi-genome-download --genera Blastocystis -p 4 -r 10 --flat-output --progress-bar --formats fasta,assembly-report protozoa
 ```
 
@@ -119,6 +121,11 @@ cat *.fna > genome.fasta
 3. Generate the sequence-to-taxid mapping file using a custom script:
 
 Example script available here: [Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
+This script will extract the organism name, taxid, and a list of sequence IDs from an assembly report file (XXX_assembly_report.txt), and generate a corresponding XXX_genome2taxid.txt for the genome file XXX_genomic.fna. XXX here represent the genome accession number and assemble name, for example: 
+genome file: GCF_000743755.1_ASM74375v1_genomic.fna               (Download in step 1)
+assembly report: GCF_000743755.1_ASM74375v1_assembly_report.txt    (Download in step 1)
+map file: GCF_000743755.1_ASM74375v1_genomic_seq2taxid_map.txt    (output from script: Build_Centrifuge_map_from_assembly_report.py)
+
 
 ```sh
 python3 Build_Centrifuge_map_from_assembly_report.py
