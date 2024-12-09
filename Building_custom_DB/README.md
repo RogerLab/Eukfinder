@@ -121,19 +121,31 @@ cat *.fna > genome.fasta
 3. Generate the sequence-to-taxid mapping file using a custom script:
 
 Example script available here: [Build_Centrifuge_map_from_assembly_report.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/Build_Centrifuge_map_from_assembly_report.py)
+
 This script will extract the organism name, taxid, and a list of sequence IDs from an assembly report file (XXX_assembly_report.txt), and generate a corresponding XXX_genome2taxid.txt for the genome file XXX_genomic.fna. XXX here represent the genome accession number and assemble name, for example: 
 
-genome file: GCF_000743755.1_ASM74375v1_genomic.fna               (Download in step 1)
+**genome file**: GCF_000743755.1_ASM74375v1_genomic.fna               (Download in step 1)
 
-assembly report: GCF_000743755.1_ASM74375v1_assembly_report.txt    (Download in step 1)
+**assembly report**: GCF_000743755.1_ASM74375v1_assembly_report.txt    (Download in step 1)
 
-map file: GCF_000743755.1_ASM74375v1_genomic_seq2taxid_map.txt    (output from script: Build_Centrifuge_map_from_assembly_report.py)
+**map file**: GCF_000743755.1_ASM74375v1_genomic_seq2taxid_map.txt    (output from script: Build_Centrifuge_map_from_assembly_report.py)
 
 
 ```sh
 python3 Build_Centrifuge_map_from_assembly_report.py
 cat *_genome2taxid.txt > genome2taxid.map
 ```
+
+**Note**:
+This script will also generate a file name "Genome_list.tsv" that list all the genomes included with the species name and taxoID. 
+
+Heres is an example of the file:
+| Genome                     | Organism Name                           |  Taxid |
+| :--------------------------|:----------------------------------------|:-------|
+| GCF_000151665.1_ASM15166v1 | Blastocystis hominis (eukaryotes)       | 12968  |
+| GCF_000743755.1_ASM74375v1 | Blastocystis sp. subtype 4 (eukaryotes) | 944170 |
+
+
 
 4. Download taxonomy files:
 
