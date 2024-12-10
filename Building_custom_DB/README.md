@@ -71,7 +71,10 @@ The seqid2taxid.map file maps each sequence ID to its corresponding taxonomy ID.
 
 #### 1.2 Building an Index from the NCBI nt Database
 
-The NCBI nt database is a comprehensive, non-redundant collection of nucleotide sequences. After downloading the nt FASTA file and the corresponding GI-to-TaxID map, you can construct a Centrifuge index as follows:
+**nt: NCBI non-redundant nucleotide database**
+The NCBI nt database is a comprehensive, non-redundant collection of nucleotide sequences drawn from GenBank, EMBL, DDBJ, and PDB. It is frequently used as a reference database for various bioinformatics analyses, including taxonomy assignment with tools like Centrifuge.
+
+Note: As of December 2024, the size of the nt.fa file has reached approximately 1.5 TB, making it very large and time-consuming to both build a Centrifuge database and run searches against it. Consider this resource requirement before proceeding.
 
 1. Download and decompress the nt database:
 
@@ -80,24 +83,30 @@ The NCBI nt database is a comprehensive, non-redundant collection of nucleotide 
    gunzip nt.gz && mv nt nt.fa
    ```
 
-2. Retrieve the GI-to-TaxID mapping:
+2. Retrieve the Accession-to-TaxID mapping files (replacing the deprecated GI-to-TaxID mapping):
 
    ```sh
    wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/gi_taxid_nucl.dmp.gz
-   gunzip -c gi_taxid_nucl.dmp.gz | sed 's/^/gi|/' > gi_taxid_nucl.map
+   gunzip -c gi_taxid_nucl.dmp.gz | sed 's/^/gi|/' > taxid_nucl.map
    ```
 
 3. Build the Centrifuge index:
 Build the Centrifuge index using more threads and a custom --bmax parameter to manage memory:
 
    ```sh
-   centrifuge-build -p 16 --bmax 1342177280 --conversion-table gi_taxid_nucl.map \
+   centrifuge-build -p 16 --bmax 1342177280 --conversion-table taxid_nucl.map \
                     --taxonomy-tree taxonomy/nodes.dmp --name-table taxonomy/names.dmp \
                     nt.fa nt
    ```
 
-(See Centrifuge manual for details)
+Sources:
 
+https://ftp.ncbi.nih.gov/blast/db/FASTA/
+
+https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/
+
+
+*****
 
 ### Method 2: Using ncbi-genome-download
 
@@ -162,6 +171,8 @@ Heres is an example of the file:
                     genome.fasta genome
    ```
 
+*****
+
 ### Method 3: Using a Custom Python Script
 
 1. Identify Genome Accession Numbers:
@@ -212,6 +223,7 @@ Example script: [genome_download_map.py](https://github.com/RogerLab/Eukfinder/b
 - Test small datasets first to confirm that the pipeline is set up correctly.
 - For more detailed instructions and troubleshooting, consult the official Centrifuge manual and other provided scripts’ documentation.
 
+*****
 
 ## Building Plast databases
 
@@ -263,6 +275,8 @@ Before building a custom Plast database:
    Once downloaded, merge all .fna files into one comprehensive FASTA:
 
    Generate the Sequence-to-TaxID Map: Use a custom Python script (similar to the ones used for Centrifuge) to generate a sequence-to-taxid map for each genome. This step will link each sequence header to its taxonomic identifier, facilitating downstream analysis.
+
+*****
 
 #### Method 2: Using Custom Genome Selection from NCBI
 
