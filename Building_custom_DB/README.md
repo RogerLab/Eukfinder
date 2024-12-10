@@ -263,7 +263,7 @@ Before building a custom Plast database:
    For example, to download all protozoa genomes at the scaffold assembly level:
 
    ```bash
-   ncbi-genome-download --assembly-level scaffold --formats fasta,assembly-report protozoa
+   ncbi-genome-download --assembly-level chromosome -p 4 -r 10 --flat-output -o library --formats fasta,assembly-report protozoa
    ```
 
    **Notes**:
