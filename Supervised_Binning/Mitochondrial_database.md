@@ -40,7 +40,7 @@ Command for direct download:
 ```sh
 wget https://ftp.ncbi.nlm.nih.gov/genomes/refseq/mitochondrion/mitochondrion.1.1.genomic.fna.gz
 gunzip mitochondrion.1.1.genomic.fna.gz
-``
+```
 
 ###Step 2: Identify Closely Related Bacteria and Archaea Genomes
 
@@ -80,7 +80,7 @@ Run the following command to download all genomes:
 
 ```sh
 cat genome_list.txt | xargs -n 1 -I {} efetch -db nuccore -id {} -format fasta > bacterial_archaeal_genomes.fna
-```sh
+```
 
 Explanation:
 genome_list.txt: File containing one genome accession number per line.
