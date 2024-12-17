@@ -3,11 +3,12 @@
 This database is designed to detect mitochondrial sequences in metagenomic assemblies by including mitochondrial genomes and closely related bacterial and archaeal genomes. The focus is on high-quality reference genomes at the complete assembly level. Below are the detailed steps for constructing this database:
 
 ## 1. Inclusion Criteria
+
 The database includes:
 
 Mitochondrial Genomes:
-
 Specifically, the genome file mitochondrion.1.1.genomic.fna.
+
 Bacterial Genomes:
 
 Classes included:
