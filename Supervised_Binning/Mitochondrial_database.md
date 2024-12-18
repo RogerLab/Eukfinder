@@ -29,7 +29,7 @@ Phyla and classes included:
 - Halobacteria.
 - Sulfolobus.
 - Thermoproteus.
-- 
+ 
 Only Reference Genomes at the Complete Assembly level are included.
 
 
@@ -68,8 +68,11 @@ Apply the following filters:
 - Download Genome Metadata:
 
 Use the Send To option on the NCBI search results page:
+
 Select “File.”
+
 Choose “Accession List” or “Genome Table” format.
+
 Save the list of genome accession numbers as genome_list.txt.
 
 ```sh
@@ -78,11 +81,11 @@ cat genome_list.txt | cut -f 1 > genome_accession_list.txt
 
 ### Step 3: Download Genomes from NCBI
 
-Once the list of accession numbers (genome_list.txt) has been prepared, download the corresponding genome files from NCBI’s FTP server:
+Once the list of accession numbers (genome_accession_list.txt) has been prepared, download the corresponding genome files from NCBI’s FTP server:
 
 #### Recommended Method: 
 
-Using a Custom Python Script(https://github.com/RogerLab/Eukfinder/tree/main/Building_custom_DB#method-3-using-a-custom-python-script)
+[Using a Custom Python Script](https://github.com/RogerLab/Eukfinder/tree/main/Building_custom_DB#method-3-using-a-custom-python-script)
 Use this python script downloading both the sequence fna file and the map file.
 
 ```sh
