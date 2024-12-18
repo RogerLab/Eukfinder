@@ -12,20 +12,24 @@ Specifically, the genome file mitochondrion.1.1.genomic.fna.
 Bacterial Genomes:
 
 Classes included:
-Alphaproteobacteria (closest relatives to mitochondria).
-Deltaproteobacteria.
-Gammaproteobacteria.
+- Alphaproteobacteria (closest relatives to mitochondria).
+- Deltaproteobacteria.
+- Gammaproteobacteria.
+ 
 Only genomes classified as Reference Genomes at the Complete Assembly level are included.
+
 Archaeal Genomes:
 
 Phyla and classes included:
-Lokiarchaeota.
-Thorarchaeota.
-Odinarchaeota.
-Methanobacteria.
-Halobacteria.
-Sulfolobus.
-Thermoproteus.
+
+- Lokiarchaeota.
+- Thorarchaeota.
+- Odinarchaeota.
+- Methanobacteria.
+- Halobacteria.
+- Sulfolobus.
+- Thermoproteus.
+- 
 Only Reference Genomes at the Complete Assembly level are included.
 
 
@@ -34,7 +38,9 @@ Only Reference Genomes at the Complete Assembly level are included.
 ###Step 1: Collect Mitochondrial Genome
 
 Download the mitochondrial genome (mitochondrion.1.1.genomic.fna) from NCBI:
+
 Source: NCBI FTP or Nucleotide Database.
+
 Command for direct download:
 
 ```sh
@@ -53,21 +59,39 @@ Set the Search Criteria to “Genome” to focus on complete genome sequences.
 Refine Search for Target Organisms:
 
 Search for each bacterial or archaeal group (e.g., “Alphaproteobacteria,” “Lokiarchaeota”).
+
 Apply the following filters:
-Assembly Level: Complete Genome.
-Genome Type: Reference Genomes only.
-Release Date: Optional, to ensure recent high-quality data.
-Download Genome Metadata:
+
+- Assembly Level: Complete Genome.
+- Genome Type: Reference Genomes only.
+- Release Date: Optional, to ensure recent high-quality data.
+- Download Genome Metadata:
 
 Use the Send To option on the NCBI search results page:
 Select “File.”
 Choose “Accession List” or “Genome Table” format.
 Save the list of genome accession numbers as genome_list.txt.
 
+```sh
+cat genome_list.txt | cut -f 1 > genome_accession_list.txt
+```
+
 ### Step 3: Download Genomes from NCBI
 
 Once the list of accession numbers (genome_list.txt) has been prepared, download the corresponding genome files from NCBI’s FTP server:
 
+#### Recommended Method: 
+
+Using a Custom Python Script(https://github.com/RogerLab/Eukfinder/tree/main/Building_custom_DB#method-3-using-a-custom-python-script)
+Use this python script downloading both the sequence fna file and the map file.
+
+```sh
+python3 genome_download_map.py assembly_summary_genbank.txt genome_accession_list.txt
+cat *.fna > genome.fasta
+cat *genome2taxid.txt > genome2taxid.map
+```
+
+#### Alternative Method:
 Use NCBI Entrez Direct (Command-Line Method):
 
 Install Entrez Direct if not already available:
@@ -101,7 +125,7 @@ cat mitochondrion.1.1.genomic.fna bacterial_archaeal_genomes.fna > mitochondrial
 After combining all mitochondrial, bacterial, and archaeal genomes into a single FASTA file, you can create a BLAST database using the makeblastdb command.
 
 ```sh
-makeblastdb -in mitochondrial_database.fna -dbtype nucl -parse_seqids -out mito_blast_db
+makeblastdb -in mitochondrial_database.fna -dbtype nucl -parse_seqids -taxid_map genome2taxid.map -out mito_blast_db
 ```
 
 ## 3. Final Output
