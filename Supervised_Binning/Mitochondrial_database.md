@@ -67,17 +67,14 @@ Apply the following filters:
 - Release Date: Optional, to ensure recent high-quality data.
 - Download Genome Metadata:
 
-Use the Send To option on the NCBI search results page:
+On the NCBI search results page:
 
-Select “File.”
+Click the box on the first row to select all the genomes;
 
-Choose “Accession List” or “Genome Table” format.
+Select Column “RefSeq” or "GenBank"
 
-Save the list of genome accession numbers as genome_list.txt.
+Choose "Download Table" to save the list of genome accession numbers as genome_list.txt.
 
-```sh
-cat genome_list.txt | cut -f 1 > genome_accession_list.txt
-```
 
 ### Step 3: Download Genomes from NCBI
 
@@ -85,11 +82,12 @@ Once the list of accession numbers (genome_accession_list.txt) has been prepared
 
 #### Recommended Method: 
 
-[Using a Custom Python Script](https://github.com/RogerLab/Eukfinder/tree/main/Building_custom_DB#method-3-using-a-custom-python-script)
 Use this python script downloading both the sequence fna file and the map file.
+[genome_download_map.py](https://github.com/RogerLab/Eukfinder/blob/main/Building_custom_DB/genome_download_map.py)
+See [Using a Custom Python Script](https://github.com/RogerLab/Eukfinder/tree/main/Building_custom_DB#method-3-using-a-custom-python-script) for more detailed instructions.
 
 ```sh
-python3 genome_download_map.py assembly_summary_genbank.txt genome_accession_list.txt
+python3 genome_download_map.py assembly_summary_genbank.txt genome_list.txt
 cat *.fna > genome.fasta
 cat *genome2taxid.txt > genome2taxid.map
 ```
