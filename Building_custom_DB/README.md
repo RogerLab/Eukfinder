@@ -186,8 +186,15 @@ Search the NCBI Nucleotide database (https://www.ncbi.nlm.nih.gov/nuccore) for t
 - Go to [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nuccore)
 - Choose "Genome" as search criteria
 - Filter results (reference genomes, MAGs, assembly level, release date)
-- Download the table and extract accession numbers from the first column	
-   Assume resulted list of geome accession number is in the file **genome_list.txt**.
+- Download the table and extract accession numbers from the filtered results:	
+
+    On the NCBI search results page:
+
+    Click the box on the first row to select all the genomes;
+
+    Select Column “RefSeq” or "GenBank"
+
+    Choose "Download Table" to save the list of genome accession numbers as genome_list.txt.
 
 2. Download the Assembly Summary File:
 
