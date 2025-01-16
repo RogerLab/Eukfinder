@@ -5,9 +5,9 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 set -u  # Treat unset variables as an error and exit immediately.
 
 # URLs for the databases
-ACC2TAX_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz/"
-CENTRIFUGE_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz/"
-PLAST_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz/"
+ACC2TAX_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz"
+CENTRIFUGE_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz"
+PLAST_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz"
 HUMAN_GENOME_URL="https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"
 READ_ADAPTERS_URL="https://perun.biochem.dal.ca/Eukfinder/TrueSeq2_NexteraSE-PE.fa"
 
