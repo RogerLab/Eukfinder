@@ -21,7 +21,15 @@ Schematic representation of eukfinder workflows. eukfinder is a taxonomic classi
 ![Graphical_abstract](https://github.com/RogerLab/Eukfinder/blob/main/Eukfinder_workflow.jpg)
 
 ## Installation
-Anaconda or miniconda required*
+**Anaconda or miniconda required**
+
+Anaconda or Miniconda must be installed to run this script.
+
+If you don’t already have Anaconda or Miniconda installed, you can follow these links to download and install them:
+
+- Anaconda Download: [Anaconda](https://www.anaconda.com/products/distribution)
+- Miniconda Download: [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+
 ### 1. Created environment and install eukfinder
 
 ```sh
