@@ -924,7 +924,7 @@ def input_check_and_setup(user_args):
     else:
         declared = reads_paths
 
-    if any(i is 'None' for i in declared):
+    if any(i == 'None' for i in declared):
         ms = '\nIt seems that at least one declared file DOES NOT exist '
         ms += 'in the directory and has been labeled as "None". \n'
         ms += 'Please check your command line.\nDeclared files are:\n'
@@ -1584,7 +1584,7 @@ def name_check(infile):
 # --- Execute ---
 
 
-def Perform_prep(user_args):
+def perform_prep(user_args):
     """
     Full argument set
     :param user_args: trimmomatic arguments
@@ -1718,7 +1718,7 @@ def program_exists(name):
     return shutil.which(name) is not None
 
 
-def Perform_eukfinder(user_args):
+def perform_eukfinder(user_args):
     """
 
     :param user_args:
@@ -1871,7 +1871,7 @@ def Perform_eukfinder(user_args):
 
 
 
-def Perform_long_seqs(user_args):
+def perform_long_seqs(user_args):
     #
     start_time = time.time()
     stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
@@ -2146,11 +2146,11 @@ def main():
 
     dic_args = vars(args)
     if dic_args['func'].__name__ == 'read_prep':
-        Perform_prep(dic_args)
+        perform_prep(dic_args)
     elif dic_args['func'].__name__ == 'short_seqs':
-        Perform_eukfinder(dic_args)
+        perform_eukfinder(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
-        Perform_long_seqs(dic_args)
+        perform_long_seqs(dic_args)
     elif dic_args["func"].__name__ == "download_db":
         perform_download_db(dic_args)
 
