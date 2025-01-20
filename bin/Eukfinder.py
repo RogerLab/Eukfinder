@@ -1946,6 +1946,18 @@ def Perform_long_seqs(user_args):
 
     return 'Done'
 
+def perform_download_db(user_args):
+    name = user_args['name']
+    if user_args['path'] == ".":
+        path = os.getcwd()
+    else:
+        path = user_args['path']
+
+    try:
+        os.mkdir(f"{path}/{name}")
+    except FileExistsError:
+        sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+
 def short_seqs(args):
     bname = args.o
     reads = args.r1, args.r2, args.ur1, args.ur2
@@ -1970,6 +1982,10 @@ def long_seqs(args):
     paths = args.m, args.a, args.p
     params = args.n, args.t, args.e, args.z, args.mhlen
     return reads, paths, params, bname
+
+def download_db(args):
+    path = args.path
+    return path
 
 def parse_arguments():
     myargs = {
@@ -2097,6 +2113,12 @@ def parse_arguments():
                                        'plast searches', True],
     }
 
+    parser_download_db = subparsers.add_parser("download_db")
+    parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
+                                    help="directory name for storing the databases")
+    parser_download_db.add_argument("-p", "--path", type=str, default=".",
+                                    help="filesystem path for storing the databases")
+
     for key in myargs_lr:
         try:
             group3.add_argument(key, myargs_lr[key][0],
@@ -2111,6 +2133,7 @@ def parse_arguments():
     parser_short_seqs.set_defaults(func=short_seqs)
     parser_read_prep.set_defaults(func=read_prep)
     parser_long_seqs.set_defaults(func=long_seqs)
+    parser_download_db.set_defaults(func=download_db)
 
     return parser.parse_args()
 
@@ -2128,6 +2151,8 @@ def main():
         Perform_eukfinder(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
         Perform_long_seqs(dic_args)
+    elif dic_args["func"].__name__ == "download_db":
+        perform_download_db(dic_args)
 
 if __name__ == '__main__':
     main()
