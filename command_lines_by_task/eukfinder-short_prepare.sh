@@ -27,7 +27,7 @@ adapters="/path/to/adapter_file"
 
 # 2. Activate the Eukfinder Conda environment
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate Eukfinder
+conda activate eukfinder
 
 # 3. Run Eukfinder (short-read preparation)
 eukfinder read_prep \
