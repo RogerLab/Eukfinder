@@ -20,9 +20,8 @@ __email__ = 'ds2000@cam.ac.uk'
 __version__ = '1.0.0'
 #   End Info   #
 
-
-
 # --- preparation ---
+
 
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
              mlenght, threads, leading_trim, trail_trim):
@@ -118,7 +117,7 @@ def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
 
     else:
         bn_r1r2 = bn_tuple
-        report = os.path.join(os.getcwd(),'%s_centrifuge_UP' % bn)
+        report = os.path.join(os.getcwd(), '%s_centrifuge_UP' % bn)
 
         gline += '-U %s -S %s --report-file %s.tsv ' % (bn_r1r2,
                                                         report, report)
@@ -127,15 +126,21 @@ def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
         return gline, report
 
 
-def cats(b_outname):
+def centrifuge_output_checkup(infile, header):
+    if os.path.exists(infile) and os.stat(infile).st_size != 0:
+
+         v = head2(infile)
+    else:
+        m = 'There is something wrong with output file: %s' % infile
+
+
+def cats(b_outname, dir_path):
     os.chdir('..')
-    cwd = os.getcwd()
-    ms = 'cwd %s' % cwd
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    wd = os.path.join(dir_path, 'Classified_reads')
     # up_dir = cwd.split('/Temp')[0]
-    outr1 = os.path.join(cwd, '%s.EUnkR1.fq' % b_outname)
-    outr2 = os.path.join(cwd, '%s.EUnkR2.fq' % b_outname)
-    outr1r2 = os.path.join(cwd, '%s.EUnk.fq' % b_outname)
+    outr1 = os.path.join(wd, '%s.EUnk.R1.fq' % b_outname)
+    outr2 = os.path.join(wd, '%s.EUnk.R2.fq' % b_outname)
+    outr1r2 = os.path.join(wd, '%s.EUnk.un.fq' % b_outname)
     return outr1, outr2, outr1r2
 
 
@@ -504,7 +509,7 @@ def relocating_files(suffix, new_dir_path):
 
 def isfasta(infile):
     cmd = 'head -1 %s' % infile
-    ms = 'cmd isfasta is %s' % cmd
+    ms = 'cmd isfasta is: %s' % cmd
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     line1 = _.stdout.decode('utf-8')
@@ -809,11 +814,13 @@ def grouper(label, pref, df, reads):
         Preset = set().union(*[Bact, Arch, Vir, Euk])
         Unk = pre_unknown.union(other_dfs(merged))
         Unk = Unk.difference(Preset)
+        print('len unk', len(Unk), sep=' ', end='\n', file=sys.stdout, flush=True)
         EUnk = set(Euk).union(Unk)
         sel_reads = [('Bact', label, pref, Bact, reads),
                      ('Arch', label, pref, Arch, reads),
                      ('EUnk', label, pref, EUnk, reads),
                      ('Misc', label, pref, Misc, reads),
+                     ('Unk', label, pref, Unk, reads),
                      ('Euk', label, pref, Euk, reads)]
         return sel_reads
     else:
@@ -891,7 +898,6 @@ def input_check_and_setup(user_args):
     max_plast = user_args['number_of_chunks']
     base_outname = user_args['out_name']
 
-
     # args specific to illumina workflow
     if user_args['func'].__name__ == 'long_seqs':
         reads = [user_args['long_seqs']]
@@ -906,7 +912,6 @@ def input_check_and_setup(user_args):
             classification = ['None', 'None']
 
     # check file existence and classification
-
     redef_reads = [it if (os.path.exists(it)
                           and os.stat(it).st_size != 0)
                    else 'None' for it in reads]
@@ -920,11 +925,26 @@ def input_check_and_setup(user_args):
                    classification]
 
     if not user_args['func'].__name__ == 'long_seqs':
+        # quick file format check up
+        boolean_seqs = [validate_input(f, 'fastq')
+                        for f in reads_paths]
+        if False in boolean_seqs:
+            sys.exit(0)
+        # quick file format check up for centrifuge
+        boolean_centrif = [validate_input(f, 'centrifuge')
+                           for f in redef_class]
+        if False in boolean_centrif:
+            sys.exit(0)
         declared = reads_paths + redef_class
     else:
+        boolean_centrif = [validate_input(f, 'fastx') for f in reads_paths]
+        if False in boolean_centrif:
+            sys.exit(0)
+        print(f'reads_paths is {reads_paths}', sep=' ', end='\n',
+              file=sys.stdout, flush=True)
         declared = reads_paths
 
-    if any(i is 'None' for i in declared):
+    if any(i == 'None' for i in declared):  # double check
         ms = '\nIt seems that at least one declared file DOES NOT exist '
         ms += 'in the directory and has been labeled as "None". \n'
         ms += 'Please check your command line.\nDeclared files are:\n'
@@ -1018,6 +1038,113 @@ def input_check_and_setup(user_args):
     return arguments
 
 
+def head2(infile):
+    o = run(f'head -2 {infile}', stdout=PIPE, stderr=PIPE, shell=True)
+    return o.stdout.decode('utf-8').strip('\n').split('\n')
+
+
+def validator(lines_list, allowed_bases, s, ms):
+    if len(lines_list) == 2:
+        header, seq = lines_list[0], lines_list[1]
+        if header.startswith(s):
+            try:
+                # check only the 10 first bases (trimmomatic keeps at least 40)
+                # adapters file should contain sequences of size >= 19n
+                subseq = seq[:19].upper()
+                not_allowed = [base for base in subseq if base not in
+                               allowed_bases]
+                if not_allowed:
+                    v = ' '.join(not_allowed)
+                    ms = 'At least one base in a sequence is not allowed.\n'
+                    ms += 'Offender base(s) is(are): %s' % v
+                    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+                    return False
+                return True
+            except IndexError:
+                ms = 'At leas one sequence is smaller than 19 bases'
+                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+                return False
+        else:
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            return False
+    else:
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        return False
+
+
+def fastaq_validator(lines_list, infile, seqtype):
+    # Recogize file type of very large files relaying on the first sequence.
+    # it does not consider sequence duplications or errors in sequences due
+    # to file size
+    allowed_bases = ['A', 'C', 'G', 'T', 'N', 'X']
+    ms = f'Invalid file type. Expected {seqtype} for {infile}'
+    if seqtype == 'fastx':
+        validation = validator(lines_list, allowed_bases, '@', ms)
+        if validation is False:
+            validation = validator(lines_list, allowed_bases, '>', ms)
+        return validation
+    else:
+        s = '>' if seqtype == 'fasta' else '@'
+        validation = validator(lines_list, allowed_bases, s, ms)
+        return validation
+
+
+def report_validator(lines_list, infile, seqtype):
+    expected = ['readID', 'seqID', 'taxID', 'score', '2ndBestScore',
+                'hitLength', 'queryLength', 'numMatches']
+    if len(lines_list) == 2:
+        header, value = lines_list[0], lines_list[1]
+        headers = header.split('\t')
+        intersect = set(headers).intersection(set(expected))
+        if len(intersect) != len(expected):
+            ms = ('File does not appear to be a centrifuge report. Expected'
+                  f'headers are: {headers}\n')
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            return False
+        else:
+            return True
+
+
+def validate_input(infile, seqtype):
+    print(f'Quick input format check for {infile}',
+          end='\n', file=sys.stdout, flush=True)
+    ms = 'Exiting program'
+    two_first_lines = head2(infile)
+    if infile == 'None':
+        return False
+    if seqtype == 'fasta' or seqtype == 'fastq':
+        fastaq = fastaq_validator(two_first_lines, infile, seqtype)
+        if fastaq is False:
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            return False
+        return True
+    if seqtype == 'fastx':
+        fastq = fastaq_validator(two_first_lines, infile, 'fastq')
+        if fastq is False:
+            # check if file is fasta format
+            fasta = fastaq_validator(two_first_lines, infile, 'fasta')
+            if fasta is False:
+                m = 'File is not fasta format. This workflow requires either '
+                m += 'fastq or fasta format files.'
+                m += ms
+                print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
+                return False
+            else:
+                print('File is fasta format', sep=' ', end='\n',
+                      file=sys.stdout, flush=True)
+                return True
+        else:
+            print('File is fastq format', sep=' ', end='\n', file=sys.stdout,
+              flush=True)
+            return True
+    if seqtype == 'centrifuge':
+        centrif = report_validator(two_first_lines, infile, seqtype)
+        if centrif is False:
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            return False
+        return True
+
+
 def suitable_kmers(k):
     newk = k.replace(' ', '')
     if ',' not in newk:
@@ -1040,7 +1167,6 @@ def suitable_kmers(k):
             print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(0)
         return newk
-
 
 
 def bytearray_sets(infile):
@@ -1117,10 +1243,9 @@ def rename_reads(readfile):
         tail = 'fastq'
     newrfile_path = os.path.join(os.getcwd(), 'tmp.%s.%s' % (orient, tail))
     cmd = 'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
-    ms = 'rename reads cmd %s' % cmd
-    print(ms, sep='\t', end='\n', flush=True)
+    ms = 'rename reads cmd:\n%s' % cmd
     _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
-    return newrfile_path
+    return newrfile_path, ms
 
 
 def pair_read_handler(cpus, max_files, files_paths, reports_list,
@@ -1314,9 +1439,9 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
     for entry in plast_outputs_list:
         etk, plast_output = entry
         if not plast_output.empty:
-            if not os.path.isfile('summary_%s.plout.tsv' % etk.lower()):
-                _ = plast_output.to_csv('summary_%s.plout.tsv' % etk.lower(),
-                                        sep='\t', header=True)
+            outfile_name = f'Parsed_plast_output_{etk.lower()}.plout.tsv'
+            if not os.path.isfile(outfile_name):
+                _ = plast_output.to_csv(outfile_name, sep='\t', header=True)
             if seqidtaxid_map is not None:
                 dfacc2tax = customtaxtranslation(seqidtaxid_map, 'Group',
                                                  plast_output)
@@ -1351,7 +1476,7 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
     return cladfs
 
 
-def writinggroups(cladfs, stamp, boutname):
+def writinggroups(cladfs, dir_path, boutname):
     """
 
     :param cladfs:
@@ -1362,9 +1487,8 @@ def writinggroups(cladfs, stamp, boutname):
         pre_args.extend(grouper(label, prefix, df, read_paths))
     ms = '****\tWriting files by group\t****\n'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-
     for arg in pre_args:
-        _ = writer(arg, stamp, boutname)
+        _ = writer(arg, dir_path, boutname)
     return 'Done'
 
 
@@ -1386,22 +1510,17 @@ def isitready(sel_reads, fpath):
     return 'Finished'
 
 
-def writer(args, stamp, boutname):
+def writer(args, dir_path, boutname):
     """
 
     :param args:
     :return:
     """
+
     group, label, fname, read_set, path = args
+
     if len(read_set) > 0:
-        if isinstance(path, list) and len(path) > 0:
-            rel_path = os.path.split(path[0])[0]
-        else:
-            rel_path = os.path.split(path)[0]
-        if not 'TempEukfinder' in rel_path:
-            rel_path = os.path.join(rel_path, 'TempEukfinder')
-        end_path = os.path.join(os.getcwd(), '%s_%s_list.tmp' % (group, label))
-        path_list = os.path.join(rel_path, end_path)
+        path_list = os.path.join(os.getcwd(), '%s_%s_list.tmp' % (group, label))
         start_time = time.time()
         handle = open(path_list, 'w')
         for read in read_set:
@@ -1410,41 +1529,37 @@ def writer(args, stamp, boutname):
         _ = isitready(read_set, path_list)
         elapsed = round(time.time() - start_time, 3)
         minutes = round((elapsed / 60), 3)
-        ms = '\nElapsed time for writing headers:\n'
+        ms = 'Elapsed time for writing accessions:'
         ms += '%s seconds; %s minutes' % (elapsed, minutes)
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
         start_time = time.time()
         # patch_path0 = os.path.join(path[0], 'TempEukfinder')
         # patch_path1 = os.path.join(path[1], 'TempEukfinder')
+
+        # use dir_path
         if label == 'Pair':
-            outs = [('%s.%sR1.fq' % (fname, group), path[0]),
-                    ('%s.%sR2.fq' % (fname, group), path[1])]
+            outs = [('%s.%s.R1.fq' % (fname, group), path[0]),
+                    ('%s.%s.R2.fq' % (fname, group), path[1])]
             for entry in outs:
                 outname, path = entry
-                f1_path = path_list.split('TempEukfinder/')[0]
-                forced_path = os.path.join(f1_path, 'TempEukfinder')
-                abs_path_outname = os.path.join(forced_path, outname)
-                # outname = os.path.join(rel_path, outname)
+                out_path = os.path.join(dir_path, 'Classified_reads')
+                abs_path_outname = os.path.join(out_path, outname)
                 cmd = 'seqkit grep -f %s -o %s %s ' % (path_list,
                                                        abs_path_outname,
                                                        path)
+                ms = 'cmd is %s\n' % cmd
                 _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-                ms = 'stdout: %s\n' % _.stdout.decode('utf-8')
+                if _.stdout.decode('utf-8').strip('\n') != '':
+                    ms = 'stdout: %s\n' % _.stdout.decode('utf-8')
                 elapsed = round(time.time() - start_time, 3)
                 minutes = round((elapsed / 60), 3)
-                ms += '\nElapsed time for writing paired outs:\n'
+                ms += 'Elapsed time for writing Paired outs:'
                 ms += '%s seconds; %s minutes' % (elapsed, minutes)
                 print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+        # unpaired workflow
         else:
-            # if isinstance(fname, list):
-            #     fname = fname[0]
-            #     if isfasta(path[0]):
-            #         tail = '.fasta'
-            #     else:
-            #         tail = 'fq'
-            #     outname = '%s.%s.%s' % (fname, group, tail)
-            #     print('When in Rome:', fname, 'outname', outname)
             if fname.startswith('scf_'):
                 fname = fname.split('.fasta')
                 outname = '%s.%s.fasta' % (fname[0], group) ###1
@@ -1452,15 +1567,14 @@ def writer(args, stamp, boutname):
                 ms = 'output is not list or scaffold. The fname is %s' % fname
                 print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
                 if isfasta(path):
-                    tail = 'fasta'
+                    outname = '%s.%s.fasta' % (fname, group)
                 else:
-                    tail = 'fq'
-                outname = '%s.%s.%s' % (fname, group, tail)
+                    outname = 'Classified_reads/%s.%s.un.fq' % (fname, group)
 
-            outname_path = os.path.join(rel_path, outname)
+            outname_path = os.path.join(dir_path, outname)
 
             if 'scf_' in outname_path:
-                pathched_path = os.path.join(rel_path, 'Classified_contigs')
+                pathched_path = os.path.join(dir_path, 'Classified_contigs')
                 outname_path = os.path.join(pathched_path, outname)
 
             if isinstance(path, list):
@@ -1476,15 +1590,27 @@ def writer(args, stamp, boutname):
             ms = 'stdout: %s\n' % _.stdout.decode('utf-8')
             elapsed = round(time.time() - start_time, 3)
             minutes = round((elapsed / 60), 3)
-            ms += 'Elapsed time for writing unpaired outs:\n'
+            ms += 'Elapsed time for writing Unpaired outs:'
             ms += '%s seconds; %s minutes' % (elapsed, minutes)
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            # print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         # new_path = os.path.join(os.getcwd(), 'tmps_%s_%s' % (boutname, stamp))
         # shutil.move(path_list, new_path)
+    else:
+        m = f'Read_set is empty. Group: {group}, label: {label}, path: {path}, fname: {fname}'
+        print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
     return 'Done'
 
 
 # --- post classification ---
+
+def standard_out(program, outinfo):
+    # getting standard output
+    o1 = outinfo.stdout.decode('utf-8').strip('\n')
+    o2 = outinfo.stderr.decode('utf-8').strip('\n')
+    sms = f'{program} stdout is:\n{o1}\n'
+    sms += f'{program} stderr is\n{o2}\n'
+    print(sms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    return 'Done'
 
 
 def assembly(read_tuple, basename, threads, maxmem, k):
@@ -1495,42 +1621,50 @@ def assembly(read_tuple, basename, threads, maxmem, k):
         e = '--pe1-s %s' % uR1R2
     else:
         e = ''
-    outdir = '%s.out' % basename
+    outdir = '%s_metaspades_out' % basename
     cmd = 'metaspades.py -t %s -m %s ' % (threads, maxmem)
     cmd += '--pe1-1 %s --pe1-2 %s %s ' % (R1, R2, e)
     cmd += '-o %s -k %s' % (outdir, k)
     ms = 'Metaspades cmd_line:\n %s' % cmd
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-    _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
+
+    scafout = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
+
+    # getting standard output
+    _ = standard_out('Metaspades', scafout)
+    # checking assembly
     p1 = os.path.join(os.getcwd(), outdir)
     assembly_path = os.path.join(p1, 'scaffolds.fasta')
-
+    # make new dir
+    ccc = 'Centrifuge_contig_classification'
+    mkdir(ccc)
+    new_dir = os.path.join(os.getcwd(), ccc)
     if os.path.isfile(assembly_path):
-        # making a copy of the assembly in the cwd
-        shutil.copy(assembly_path, os.getcwd())
+        # making a copy of the assembly in the new dir
+        shutil.copy(assembly_path, new_dir)
     else:
         # cautionary waiting time
-        time.sleep(30)
+        time.sleep(60)
         # second check
         if os.path.isfile(assembly_path):
-            # making a copy of the assembly in cwd
-            shutil.copy(assembly_path, os.getcwd())
+            # making a copy of the assembly in new dir
+            shutil.copy(assembly_path, new_dir)
         else:
             ms = "The assembly process failed. "
             ms += "There might not be enough reads left that overlap"
-            ms += "to create and elongate contigs."
+            ms += "to create and elongate contigs.\n"
             ms += "Terminating program.\n"
             print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(0)
     # rename assembly using basename
-    scaffolds = change_c_names(os.path.abspath('scaffolds.fasta'),
-                               basename)
-    ms = 'Newly named assembly is:\n %s' % os.path.abspath(scaffolds)
+    scaffolds = change_c_names(new_dir, 'scaffolds.fasta', basename)
+    ms = 'Newly named assembly is:\n %s' % scaffolds
     print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
-    return os.path.abspath(scaffolds), scaffolds
+    return scaffolds, 'scf_%s.fasta' % basename
 
 
-def change_c_names(assembly, basename):
+def change_c_names(new_dir, assembl, basename):
+    assembly = os.path.join(new_dir, assembl)
     new = {}
     track = {}
     with open(assembly) as I:
@@ -1547,8 +1681,8 @@ def change_c_names(assembly, basename):
                 ms = 'repeated accession %s' % value[0]
                 print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
-    outname1 = 'scf_%s.fasta' % basename
-    outname2 = 'scf_%s_cross_check.txt' % basename
+    outname1 = os.path.join(new_dir, 'scf_%s.fasta' % basename)
+    outname2 = os.path.join(new_dir, 'scf_%s_cross_check.txt' % basename)
     with open(outname1, 'w') as O1, \
             open(outname2, 'w') as O2:
         for key in new.keys():
@@ -1556,20 +1690,25 @@ def change_c_names(assembly, basename):
             check = '%s\t%s\n' % (key, track[key])
             O1.write(fasta)
             O2.write(check)
-    original_scaff = os.path.abspath(assembly)
-    os.remove(original_scaff)
+    os.remove(assembly)
     return outname1
 
 
 def post_assembly(threads, out_name, fasta_path, dbpath, mhlen):
-    # fasta_path = os.path.abspath(fasta)
+    os.chdir('Centrifuge_contig_classification')
     cline = 'centrifuge -f --threads %s -k 1 ' % threads
     cline += '--min-hitlen %s -x %s ' % (mhlen, dbpath)
     cline += '-U %s -S %s_scf.centrifuge_UP ' % (fasta_path, out_name)
     cline += '--report-file %s_scf.centrifuge_UP.tsv ' % out_name
-    print('post assembly classification cmd:', cline)
-    _ = run(cline, stdout=PIPE, stderr=PIPE, shell=True)
-    report_name = '%s_scf.centrifuge_UP' % out_name
+    print('Post assembly classification cmd:', cline)
+
+    centout = run(cline, stdout=PIPE, stderr=PIPE, shell=True)
+    report_name = os.path.abspath('%s_scf.centrifuge_UP' % out_name)
+    valid, ms = validate_output(centout)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
+    os.chdir('..')
     return os.path.abspath(report_name)
 
 
@@ -1583,6 +1722,19 @@ def name_check(infile):
 
 # --- Execute ---
 
+def mini_loop(user_args_lst, ftype):
+    for file in user_args_lst:
+        if os.path.exists(file) and os.stat(file).st_size > 0:
+            valid = validate_input(os.path.abspath(file), ftype)
+            if not valid:
+                sys.exit(0)
+        else:
+            ms = f"Declared file {file} does not exist in path or is empty\n"
+            ms += "Terminating program."
+            print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
+            sys.exit(0)
+    return 'Done'
+
 
 def Perform_prep(user_args):
     """
@@ -1590,6 +1742,12 @@ def Perform_prep(user_args):
     :param user_args: trimmomatic arguments
     :return: all arguments to trim, map and centrifuge
     """
+    start_time = time.time()
+    stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
+    tmpdirname = 'tmp_readprep_%s%s' % (user_args['out_name'], stamp)
+    log = os.path.abspath('Read_prep_%s.log' % stamp)
+    sys.stdout = open(log, 'w')
+
     # Trimming raw reads
     ms = 'Run has started with arguments:\n'
     for key in user_args:
@@ -1606,46 +1764,36 @@ def Perform_prep(user_args):
         sys.exit(0)
     plastdb_home = glob.glob('%s*' % user_args['cdb'])
 
-    if (not os.path.exists(user_args['r1']) or
-            not os.path.exists(user_args['r2'])
-            or not os.path.exists(user_args['hg']) or not
-            os.path.exists(user_args['illumina_clip'])):
+    # fast check for file format
+    _ = mini_loop([user_args['r1'], user_args['r2']], 'fastq')
+    _ = mini_loop([user_args['hg'], user_args['illumina_clip']],
+                  'fasta')
 
-        ms = 'At least one of the mandatory input files do not exist in path\n'
-        ms += 'Declared files are:\nReads1 %s\nReads2: %s\nHost genome: %s\n'
-        ms %= user_args['r1'], user_args['r2'], user_args['hg'],
-        ms += 'Adapters file: %s\n' % user_args['illumina_clip']
-        ms += '\nTerminating program.'
-        print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
-        sys.exit(0)
-
+    # declare file existence
     # abspaths
     adapters = os.path.abspath(user_args['illumina_clip'])
     oR1 = os.path.abspath(user_args['r1'])
     oR2 = os.path.abspath(user_args['r2'])
-    #
-
     ori_host_genome = os.path.abspath(user_args['hg'])
-    start_time = time.time()
-    stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
-    tmpdirname = 'tmp_readprep_%s%s' % (user_args['out_name'], stamp)
-    log = os.path.abspath('Read_prep_%s.log' % stamp)
-    sys.stdout = open(log, 'w')
-    ms = 'Eukfinder v%s is using python %s\n' % (__version__,
+    #
+    mss = 'Eukfinder v%s is using python %s\n' % (__version__,
                                                  platform.python_version())
-    ms += 'Check logs for additional information on run progress or errors\n'
-    ms += 'Preparing reads for analysis...'
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    mss += 'Preparing reads for analysis...'
+
+    print(mss, sep=' ', end='\n', file=sys.stdout, flush=True)
     mkdir(tmpdirname)
     tmpdirname_path = os.path.abspath(tmpdirname)
     os.chdir(tmpdirname_path)
     shutil.copy(ori_host_genome, os.getcwd())
 
     readfile_list = [(oR1, 'R1'), (oR2, 'R2')]
-    nR1, nR2 = Parallel(n_jobs=-2)(delayed(rename_reads)(readfile)
+    xR1, xR2 = Parallel(n_jobs=-2)(delayed(rename_reads)(readfile)
                             for readfile in readfile_list)
+    nR1, m1 = xR1
+    nR2, m2 = xR2
+    ms += m1 + m2
+    ms += '\nReads have been renamed\n'
 
-    ms = 'Reads have been renamed'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     R1, R2, uR1R2 = trimming(user_args['out_name'], nR1, nR2, adapters,
                              user_args['wsize'], user_args['qscore'],
@@ -1656,16 +1804,24 @@ def Perform_prep(user_args):
     # Mapping host out
     ms = 'Getting rid of host reads...'
     print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
+
+    # validate trimmomatic output
+    _ = mini_loop([R1, R2], 'fastq')
+
     b2_index = bowtie2build(user_args['hg'])
     outr1, outr2, outr1r2, cmd_line = bowtie2(user_args['out_name'],
                                               user_args['threads'], R1, R2,
                                               uR1R2, b2_index, 'fastq-host')
 
-    ms = 'bowtie2 cmd line is:\n %s\noutr1: %s, outr2: %s and outr1r2:%s\n'
+    ms = 'bowtie2 cmd line is: %s\noutr1: %s\noutr2: %s\noutr1r2: %s\n'
     ms %= cmd_line, outr1, outr2, outr1r2
 
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     _ = run(cmd_line, stdout=PIPE, stderr=PIPE, shell=True)
+
+    # validate bowtie2 output
+    _ = mini_loop([outr1, outr2, outr1r2], 'fastq')
+
     # centrifuge host-less reads
     ccmd_pline, p_report = centrifuge(user_args['out_name'], 
                                       (outr1, outr2),
@@ -1674,41 +1830,95 @@ def Perform_prep(user_args):
                                       user_args['cdb'], 1, pair=True,
                                       fastq=True)
 
-    _ = run(ccmd_pline, stdout=PIPE, stderr=PIPE, shell=True)
-
+    pcent_out = run(ccmd_pline, stdout=PIPE, stderr=PIPE, shell=True)
+    valid, ms = validate_output(pcent_out)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
     ccmd_upline, up_report = centrifuge(user_args['out_name'], outr1r2,
                                         user_args['threads'],
                                         user_args['mhlen'],
                                         user_args['cdb'], 1, pair=False,
                                         fastq=True)
-    _ = run(ccmd_upline, stdout=PIPE, stderr=PIPE, shell=True)
+    ucent_out = run(ccmd_upline, stdout=PIPE, stderr=PIPE, shell=True)
+    valid, ms = validate_output(ucent_out)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
 
     # ---- Deleting temporary files ----
-
     os.chdir('..')
     my_preps = (outr1, outr2, outr1r2, p_report, up_report)
-
     new_abspaths = []
-    ms = 'Something went wrong during the read preparation.\n'
+    ms = 'Something went wrong.\n'
+    skip = []
     for f in my_preps:
         try:
-            shutil.move(f, os.getcwd())
-            new_abspaths.append(os.path.abspath(f))
+            myf = os.path.split(f)[1]
+            print(f'Moving {f} to {os.getcwd()}', end='\n', file=sys.stdout,
+                  flush=True)
+            nflocation = os.path.join(os.getcwd(), myf)
+            if os.path.isfile(nflocation):
+                m = f'WARNING:\nFile {myf} already exists in {os.getcwd()} '
+                m += 'and will not be overwritten.\nNewly processed file will '
+                m += 'remain in the tmp directory'
+                print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
+                skip.append(f)
+            else:
+                shutil.move(f, os.getcwd())
+                new_abspaths.append(nflocation)
         except:
+            ms += f'ERROR: attempt to move {f} to {os.getcwd()} failed\n'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            sys.exit(1)
+    if not skip:
+        try:
+            os.system('rm -r %s' % tmpdirname_path)
+        except:
+            ms += '%s does not seem to exist\n'
             ms += 'Terminating program.'
             print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
             sys.exit(1)
-    try:
-        os.system('rm -r %s' % tmpdirname_path)
-    except:
-        ms += '%s does not seem to exist\n'
-        ms += 'Terminating program.'
-        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-        sys.exit(1)
-    ms = "Files are ready to use with 'short_seqs' mode:\n%s" % '\n'.join(
-        new_abspaths)
-    print(ms, flush=True)
+        ms = "Files are ready to use with 'short_seqs' mode:\n%s" % '\n'.join(
+            new_abspaths)
+        print(ms, flush=True)
     return my_preps
+
+
+def validate_output(res_output):
+    stderr = res_output.stderr.decode('utf-8').rstrip('\n').split('\n')
+    value = [True for e in stderr if e.lower().startswith('error')]
+    if value:
+        return False, stderr
+
+    # check the output is not empty
+    tsvfile = stderr[0].split(' ')[-1]
+    cfile = os.path.abspath(tsvfile)
+    if os.path.exists(cfile) and os.stat(cfile).st_size > 0:
+        fcontent = head2(cfile)
+        mylen = len(fcontent)
+        if mylen == 1:
+            cla_file = cfile[:-4]
+            m = f"File {cfile} is empty. It is highly likely that all reads "
+            m += "were deemed as 'unclassified' by centrifuge. Eukfinder will "
+            m += f"continue unless the report {cla_file} is empty.\n"
+            # make sure the classification file is no empty despite empty tsv
+            if os.path.exists(cla_file) and os.stat(cla_file).st_size > 0:
+                xcontent = head2(cla_file)
+                if len(xcontent) != 2:
+                    m += f"Report {cla_file} might be empty.\nExiting program"
+                    return False, m
+            return True, m
+        elif mylen > 1:
+            m = "No errors reported"
+            return True, m
+        else:
+            m = "Unknown error"
+            m += '\n'.join(stderr)
+            return True, m
+    else:
+        m = f"Something is wrong with {cfile}. Terminating program."
+        return False, m
 
 
 def program_exists(name):
@@ -1727,7 +1937,7 @@ def Perform_eukfinder(user_args):
 
     # print(user_args)
     start_time = time.time()
-    stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
+    stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
     log = 'Class_%s.log' % stamp
     sys.stdout = open(log, 'w')
     ms = 'Eukfinder v%s is using python %s' % (__version__,
@@ -1761,14 +1971,15 @@ def Perform_eukfinder(user_args):
         if name_check(reads_paths[0]):
             rr = '\n'.join(redef_reads)
             rp = '\n'.join(reads_paths)
-            ms = 'redef_reads\n%s reads paths\n%s' % (rr, rp)
+            ms = 'redef_reads:\n%s\nreads paths:\n%s' % (rr, rp)
             print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-            new_redef_reads = [rename_reads((reads_paths[0], 'R1')),
-                               rename_reads((reads_paths[1], 'R2')),
-                               rename_reads((reads_paths[2], 'U'))]
-            ms = 'new redef reads are:\n%s\n' % '\n'.join(new_redef_reads)
+            nrr = [rename_reads((reads_paths[0], 'R1')),
+                   rename_reads((reads_paths[1], 'R2')),
+                   rename_reads((reads_paths[2], 'U'))]
+            ms = '\n'.join([e[1] for e in nrr])
+            new_redef_reads = [e[0] for e in nrr]
+            ms += 'new redef reads are:\n%s\n' % '\n'.join(new_redef_reads)
             print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-
         else:
             new_redef_reads = reads_paths
 
@@ -1777,7 +1988,12 @@ def Perform_eukfinder(user_args):
                                          new_redef_reads, stamp, base_outname)
     else:
         if name_check(redef_reads[0]):
-            new_redef_reads = [rename_reads((redef_reads[0], 'U'))]
+            nrr = [rename_reads((redef_reads[0], 'U'))]
+            m = '\n'.join([e[1] for e in nrr])
+            new_redef_reads = [e[0] for e in nrr]
+            ms += m
+            ms += 'new redef reads are:\n%s\n' % '\n'.join(new_redef_reads)
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         else:
             new_redef_reads = reads_paths
 
@@ -1795,7 +2011,8 @@ def Perform_eukfinder(user_args):
         final_dfs = create_df_taxonomy(parsed_plouts, acc2tax_path,
                                        existing_dfs, pid,
                                        map_id_path)
-        _ = writinggroups(final_dfs, stamp, base_outname)
+        # dirpath
+        _ = writinggroups(final_dfs, dirpath, base_outname)
 
     else:
         ms = 'No files containing reads were declared. Terminating program'
@@ -1806,22 +2023,14 @@ def Perform_eukfinder(user_args):
     ms = 'Re-classification step'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
-    cat_reads = cats(base_outname)
-
+    cat_reads = cats(base_outname, dirpath)
     scaffolds, new_outname = assembly(cat_reads, base_outname, ncpu, max_mem,
                                       kmers)
 
-    # Clean up -> Storing reads
-    new_dir = os.path.join(os.getcwd(), 'Classified_reads')
-    up_dir = os.getcwd().split('/Temp')[0]
-    fqlist = glob.glob('%s/*fq' % up_dir) + glob.glob('*.fq')
+    # Contig classification and report validation
+    sreport = post_assembly(ncpu, base_outname, scaffolds,
+                            cdb_path, mhlen)
 
-    mkdir(new_dir)
-    for fq in fqlist:
-        shutil.move(fq, new_dir)
-
-    # Contig classification
-    sreport = post_assembly(ncpu, base_outname, scaffolds, cdb_path, mhlen)
 
     new_dfs = single_read_handler(n_cpu, max_plast,
                                   [scaffolds], [sreport],
@@ -1835,30 +2044,39 @@ def Perform_eukfinder(user_args):
         fdf = create_df_taxonomy(parsed_plouts, acc2tax_path,
                                  new_dfs, pid,
                                  map_id_path)
+
         mycwd = os.getcwd()
         os.chdir('..')
-        reclass_dir = 'Classified_contigs'
-        mkdir(reclass_dir)
-        reclass_dir_path = os.path.join(os.getcwd(), reclass_dir)
+        dir_path = os.getcwd()
         os.chdir(mycwd)
-        _ = writinggroups(fdf, stamp, new_outname)
+        _ = writinggroups(fdf, dir_path, new_outname)
         os.chdir('..')
-        flist = glob.glob(os.path.abspath('scf_%s*' % base_outname))
-        for f in flist:
-            shutil.move(f, reclass_dir_path)
+        print('cwd', os.getcwd(), sep=' ', end='\n', file=sys.stdout,
+              flush=True)
 
-        # patching relacation of second centrifuge results
+        # patching relocation of second centrifuge results
         centrifuge_outs = glob.glob(os.path.abspath('*centrifuge*'))
         patch_dir = os.path.abspath('tmps_%s_%s' % (new_outname, stamp))
         for out in centrifuge_outs:
             shutil.move(out, patch_dir)
 
-        ms = "\n*****\tWARNING BEGINS\t*****\n"
-        ms += "The directory 'Classified_reads' contains the read subsets "
-        ms += "used to obtain an assembly.\nSuch assembly was re-classified "
-        ms += "in bacteria, archaea and eukaryota/unknown files which were "
-        ms += "placed in the directory \n'Classified_contigs'. "
-        ms += "Each of these files may contain MORE than ONE "
+        # relocate result directories
+        os.chdir('..')
+        dirs_2_move = ['Classified_reads', 'Classified_contigs']
+        bdir = os.getcwd()
+        for d in dirs_2_move:
+            mf = os.path.join(dir_path, d)
+            shutil.move(mf, bdir)
+
+        ms = '****  RESULTS ARE READY!  ****\n'
+        ms += "The 'Classified_reads' directory contains the read subsets "
+        ms += "that were used to obtain an assembly.\nSuch assembly was "
+        ms += "re-classified as bacteria, archaea, eukaryota, unknown and "
+        ms +=  "Eukaryota-Unknown. These files are deposited in the directory "
+        ms += "\n'Classified_contigs'. Directory TempEukfinder contains "
+        ms += "temporary files to produce to directories already mentioned\n"
+        ms += "\n*****   WARNING !!! *****\n"
+        ms += "Each of these classified files may contain MORE than ONE "
         ms += "eukaryotic or prokaryotic taxon or a mixture of them. "
         ms += "Hence, supervised binning or \n"
         ms += "manual inspection on the file of your interest MUST be done.\n"
@@ -1869,12 +2087,10 @@ def Perform_eukfinder(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
 
-
-
 def Perform_long_seqs(user_args):
     #
     start_time = time.time()
-    stamp = time.strftime('%Y%m%d%H%M%S', time.gmtime(start_time))
+    stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
     log = 'Long_seqs_%s.log' % stamp
     sys.stdout = open(log, 'w')
     ms = 'Eukfinder v%s is using python %s' % (__version__,
@@ -1885,7 +2101,8 @@ def Perform_long_seqs(user_args):
     e_value, pid, base_outname, cov,  cdb_path, mhlen = input_check_and_setup(
         user_args)
     n_cpu = cpu_chunk(n_cpu, max_plast)
-    new_reads = rename_reads((redef_reads[0], 'LR'))
+    new_reads, m = rename_reads((redef_reads[0], 'LR'))
+    print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
     reads = bytearray_sets(new_reads)
     dirname = 'tmps_%s_%s' % (base_outname, stamp)
     mkdir(dirname)
@@ -1904,8 +2121,12 @@ def Perform_long_seqs(user_args):
                                         user_args['cdb'], 1, pair=False,
                                         fastq=fastq)
 
-    _ = run(ccmd_upline, stdout=PIPE, stderr=PIPE, shell=True)
-
+    cstdout = run(ccmd_upline, stdout=PIPE, stderr=PIPE, shell=True)
+    # validate output
+    valid, ms = validate_output(cstdout)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
     df_un = pd.DataFrame(reads, columns=['readID'])
     dfr_un = reading_reports(up_report)
 
@@ -1921,9 +2142,13 @@ def Perform_long_seqs(user_args):
                                                cov, True)
         fdf = create_df_taxonomy(parsed_plouts, acc2tax_path,
                                  existing_dfs, pid, map_id_path)
-        _ = writinggroups(fdf, stamp, base_outname)
 
-    os.chdir('..')
+        mycwd = os.getcwd()
+        os.chdir('..')
+        dir_path = os.getcwd()
+        os.chdir(mycwd)
+        _ = writinggroups(fdf, dir_path, base_outname)
+        os.chdir('..')
 
     # removing temporary files
     """
@@ -1936,15 +2161,23 @@ def Perform_long_seqs(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
     """
-    ms = '\n*****\tWARNING BEGINS\t*****\n'
-    ms += 'The input file has been split in several files: bacteria, '
-    ms += 'archaea, eukaryota and miscelaneous. Each may contain '
-    ms += 'more than one eukaryotic or prokaryotic taxon.\nSupervised '
-    ms += 'binning or manual inspection on the file of your interest '
-    ms += 'is REQUIRED\n*****\tEND OF WARNING\t*****\n'
+    ms = '****  RESULTS ARE READY!  ****\n'
+    ms += "The 'Classified_reads' directory contains the read classified "
+    ms += "as bacteria, archaea, eukaryota, unknown and "
+    ms += "Eukaryota-Unknown. Directory prefixed with 'tmp' contains "
+    ms += "temporary intermediate files to classify the reads mentioned\n"
+    ms += "\n*****   WARNING !!! *****\n"
+    ms += "Each of these classified files may contain MORE than ONE "
+    ms += "eukaryotic or prokaryotic taxon or a mixture of them. "
+    ms += "Hence, supervised binning or \n"
+    ms += "manual inspection on the file of your interest MUST be done.\n"
+    ms += "We recommend to apply MyCC software (Lin & Liao, 2016) "
+    ms += "(doi:10.1038/srep24175) or \nAnvio (Eren et al 2015)"
+    ms += "(10.7717/peerj.1319)\n.  Please see Eukfinder user manual "
+    ms += "for binning\n*****\tEND OF WARNING\t****\n"
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-
     return 'Done'
+
 
 def short_seqs(args):
     bname = args.o
@@ -1953,6 +2186,7 @@ def short_seqs(args):
     paths = args.m, args.a, args.p, args.cdb, args.m2, args.p2
     params = args.n, args.t, args.e, args.z, args.mhlen
     return reads, classification, paths, params, bname
+
 
 def read_prep(args):
     bname = args.o
@@ -1964,6 +2198,7 @@ def read_prep(args):
         args.qscore, args.mlen, args.mhlen
     return bname, reads, threads, adapters, params, host
 
+
 def long_seqs(args):
     bname = args.o
     reads = args.u
@@ -1971,13 +2206,14 @@ def long_seqs(args):
     params = args.n, args.t, args.e, args.z, args.mhlen
     return reads, paths, params, bname
 
+
 def parse_arguments():
     myargs = {
         '-n': ['--number-of-threads', str, 'Number of threads', True],
         '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
                                           'file', True],
         '-t': ['--taxonomy-update', str, 'Set to True the first '
-                                         'time the program is used. Otherwise set to False', True],
+               'time the program is used. Otherwise set to False', True],
         '-p': ['--plast-database', str, 'path to plast database', True],
         '-m': ['--plast-id-map', str, 'path to taxonomy map for '
                                       'plast database', True],
@@ -1998,7 +2234,7 @@ def parse_arguments():
         '--max_m': ['--max_memory', str, 'Maximum memory allocated to '
                                          'carry out an assembly', True],
         '-k': ['--kmers', str, 'kmers to use during assembly. '
-                               'These must be odd and less than 128. default is 21,33,55',
+               'These must be odd and less than 128. default is 21,33,55',
                False],
         '--mhlen': ['--min-hit-length', int, 'Maximum memory allocated to '
                                              'carry out an assembly', True],
@@ -2025,8 +2261,10 @@ def parse_arguments():
                         help='out name', required=True)
     for key in myargs:
         try:
-            group1.add_argument(key, myargs[key][0], type=myargs[key][1],
-                                help=myargs[key][2], required=myargs[key][3])
+            group1.add_argument(key, myargs[key][0],
+                                type=myargs[key][1],
+                                help=myargs[key][2],
+                                required=myargs[key][3])
         except:
             parser_short_seqs.add_argument(key, myargs[key][0],
                                            type=myargs[key][1],
@@ -2114,11 +2352,13 @@ def parse_arguments():
 
     return parser.parse_args()
 
+
 def main():
     args = parse_arguments()
 
     if len(sys.argv) == 1:
-        print('Try Eukfinder.py -h for more information', sep=' ', end='\n', file=sys.stdout, flush=True)
+        print('Try Eukfinder.py -h for more information', sep=' ',
+              end='\n', file=sys.stdout, flush=True)
         sys.exit(1)
 
     dic_args = vars(args)
@@ -2128,6 +2368,7 @@ def main():
         Perform_eukfinder(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
         Perform_long_seqs(dic_args)
+
 
 if __name__ == '__main__':
     main()
