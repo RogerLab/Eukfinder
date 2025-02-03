@@ -20,6 +20,14 @@ __email__ = 'ds2000@cam.ac.uk'
 __version__ = '1.0.0'
 #   End Info   #
 
+# database info
+_database = {
+    "1": ["acc2tax database", "36 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz"],
+    "2": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz"],
+    "3": ["PLAST database", "3.7 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz"],
+    "4": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
+    "5": ["Read Adapters for Illumina sequencing", "16.0 KB", "https://perun.biochem.dal.ca/Eukfinder/TrueSeq2_NexteraSE-PE.fa"]
+}
 
 
 # --- preparation ---
@@ -1948,6 +1956,7 @@ def perform_long_seqs(user_args):
 
 def perform_download_db(user_args):
     name = user_args['name']
+
     if user_args['path'] == ".":
         path = os.getcwd()
     else:
@@ -1957,6 +1966,51 @@ def perform_download_db(user_args):
         os.mkdir(f"{path}/{name}")
     except FileExistsError:
         sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+
+    print(f"Created {path}/{name}\n")
+
+    while True:
+        user_input = input("Would you like to download all databases (78 GB)? (yes/no)\n>")
+
+        if user_input == "yes":
+            print("\nDownloading...")
+            break
+        elif user_input == "no":
+            while True:
+                print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                print(f"1. {_database['1'][0]} - {_database['1'][1]}")
+                print(f"2. {_database['2'][0]} - {_database['2'][1]}")
+                print(f"3. {_database['3'][0]} - {_database['3'][1]}")
+                print(f"4. {_database['4'][0]} - {_database['4'][1]}")
+                print(f"5. {_database['5'][0]} - {_database['5'][1]}")
+                user_input = input("\nOr type exit, if you would like to skip for now:\n>")
+
+                if user_input == "exit":
+                    os.rmdir(f"{path}/{name}")
+                    print(f"\nDeleted {path}/{name}\n")
+                    sys.exit("No downloads, exiting...")
+
+                selected = user_input.split(" ") if user_input.strip() else []
+
+                if not selected:
+                    print("\nInvalid option. Enter indices separated by spaces.\n")
+                    continue
+
+                print("\nDownloading...")
+
+                for index in selected:
+                    if index in _database.keys():
+                        print(f"Downloading {_database[index][0]}...")
+                        os.mkdir(f"{path}/{name}/{index}")
+                        print(f"{_database[index][0]} downloaded.")
+                    else:
+                        print(f"WARNING: Unrecognized index {index}, skipping...")
+
+                break
+
+            sys.exit(f"\nDatabase(s) downloaded in {path}/{name}, exiting...")
+
+        print("\nInvalid option. Enter yes or no.\n")
 
 def short_seqs(args):
     bname = args.o
