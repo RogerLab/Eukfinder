@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import tarfile
 import ete3
 import glob
 import time
@@ -12,21 +13,24 @@ import pandas as pd
 from subprocess import PIPE, run
 from joblib import Parallel, delayed
 import argparse
+import urllib.request
 
 
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.0.0'
+__version__ = '1.2.4'
 #   End Info   #
 
 # database info
+_all_db = ["eukfinder databases", "84 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs.tar.gz", "eukfinder_dbs.tar.gz"]
+
 _database = {
-    "1": ["acc2tax database", "36 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz"],
-    "2": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz"],
-    "3": ["PLAST database", "3.7 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz"],
-    "4": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
-    "5": ["Read Adapters for Illumina sequencing", "16.0 KB", "https://perun.biochem.dal.ca/Eukfinder/TrueSeq2_NexteraSE-PE.fa"]
+    "1": ["acc2tax database", "39 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz", "acc2tax_db.tar.gz"],
+    "2": ["centrifuge database", "75 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
+    "3": ["PLAST database", "3.9 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz", "plast_db.tar.gz"],
+    "4": ["Human Genome for read decontamination", "0.96 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
+    "5": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
 }
 
 
@@ -1969,48 +1973,72 @@ def perform_download_db(user_args):
 
     print(f"Created {path}/{name}\n")
 
-    while True:
-        user_input = input("Would you like to download all databases (78 GB)? (yes/no)\n>")
+    try:
+        while True:
+            user_input = input(f"Would you like to download all databases ({_all_db[1]})? (yes/no)\n>")
 
-        if user_input == "yes":
-            print("\nDownloading...")
-            break
-        elif user_input == "no":
-            while True:
-                print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
-                print(f"1. {_database['1'][0]} - {_database['1'][1]}")
-                print(f"2. {_database['2'][0]} - {_database['2'][1]}")
-                print(f"3. {_database['3'][0]} - {_database['3'][1]}")
-                print(f"4. {_database['4'][0]} - {_database['4'][1]}")
-                print(f"5. {_database['5'][0]} - {_database['5'][1]}")
-                user_input = input("\nOr type exit, if you would like to skip for now:\n>")
-
-                if user_input == "exit":
-                    os.rmdir(f"{path}/{name}")
-                    print(f"\nDeleted {path}/{name}\n")
-                    sys.exit("No downloads, exiting...")
-
-                selected = user_input.split(" ") if user_input.strip() else []
-
-                if not selected:
-                    print("\nInvalid option. Enter indices separated by spaces.\n")
-                    continue
-
+            if user_input == "yes":
                 print("\nDownloading...")
+                print("Please do not close tab, this may take a while...")
+                urllib.request.urlretrieve(_all_db[2], f"{path}/{name}/{_all_db[3]}")
 
-                for index in selected:
-                    if index in _database.keys():
-                        print(f"Downloading {_database[index][0]}...")
-                        os.mkdir(f"{path}/{name}/{index}")
-                        print(f"{_database[index][0]} downloaded.")
-                    else:
-                        print(f"WARNING: Unrecognized index {index}, skipping...")
+                print("\nDecompressing...")
+                file = tarfile.open(f"{path}/{name}/{_all_db[3]}")
+                file.extractall(f"{path}/{name}")
+                file.close()
 
-                break
+                # TODO: decompress individual dbs too! Remember to check if the content changed on perun
 
-            sys.exit(f"\nDatabase(s) downloaded in {path}/{name}, exiting...")
+                sys.exit(f"\nDatabases downloaded in {path}/{name}, exiting...")
+            elif user_input == "no":
+                while True:
+                    print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                    print(f"1. {_database['1'][0]} - {_database['1'][1]}")
+                    print(f"2. {_database['2'][0]} - {_database['2'][1]}")
+                    print(f"3. {_database['3'][0]} - {_database['3'][1]}")
+                    print(f"4. {_database['4'][0]} - {_database['4'][1]}")
+                    print(f"5. {_database['5'][0]} - {_database['5'][1]}")
+                    user_input = input("\nOr type exit, if you would like to skip for now:\n>")
 
-        print("\nInvalid option. Enter yes or no.\n")
+                    if user_input == "exit":
+                        os.rmdir(f"{path}/{name}")
+                        print(f"\nDeleted {path}/{name}\n")
+                        sys.exit("No downloads, exiting...")
+
+                    selected = user_input.split(" ") if user_input.strip() else []
+
+                    if not selected:
+                        print("\nInvalid option. Enter indices separated by spaces.\n")
+                        continue
+
+                    print("\nDownloading...\n")
+
+                    for index in selected:
+                        if index in _database.keys():
+                            db_path = f"{path}/{name}/{index}_{_database[index][0]}"
+                            os.mkdir(db_path)
+
+                            print(f"Downloading {_database[index][0]}...")
+                            urllib.request.urlretrieve(_database[index][2],f"{db_path}/{_database[index][3]}")
+
+                            print(f"Decompressing {_database[index][0]}...")
+                            file = tarfile.open(f"{db_path}/{_database[index][3]}")
+                            file.extractall(db_path)
+                            file.close()
+
+                            os.remove(f"{db_path}/{_database[index][3]}")
+
+                            print(f"{_database[index][0]} downloaded and decompressed.\n")
+                        else:
+                            print(f"WARNING: Unrecognized index {index}, skipping...\n")
+
+                    break
+
+                sys.exit(f"Database(s) downloaded in {path}/{name}, exiting...")
+
+            print("\nInvalid option. Enter yes or no.\n")
+    except Exception as e:
+        exit(f"Error: {e}")
 
 def short_seqs(args):
     bname = args.o
