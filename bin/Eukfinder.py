@@ -19,7 +19,7 @@ import urllib.request
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.2.4'
+__version__ = '1.2.3'
 #   End Info   #
 
 # database info
