@@ -219,7 +219,14 @@ Example script: [genome_download_map.py](https://github.com/RogerLab/Eukfinder/b
    cat *genome2taxid.txt > genome2taxid.map
    ```
 
-4. Build the Centrifuge index:
+4. Obtain the NCBI taxonomy files:
+
+   ```sh
+   centrifuge-download -o taxonomy taxonomy
+   ```
+
+
+5. Build the Centrifuge index:
 
    ```sh
    centrifuge-build -p 16 --bmax 1342177280 --conversion-table genome2taxid.map \
