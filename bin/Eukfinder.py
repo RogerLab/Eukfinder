@@ -879,8 +879,8 @@ def input_check_and_setup(user_args):
     acc2tax_custom_exists = program_exists('acc2tax')
     if plast_exists is False or acc2tax_custom_exists is False:
         m = 'Eukfinder requirements are not met: '
-        m += 'plast is installed: ', plast_exists
-        m += '\nacc2tax is installed: ', acc2tax_custom_exists
+        m += f'plast is installed: {plast_exists}',
+        m += f'\nacc2tax is installed: {acc2tax_custom_exists}',
         m += '\nExiting program'
         print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
