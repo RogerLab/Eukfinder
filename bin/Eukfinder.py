@@ -1990,7 +1990,7 @@ def perform_download_db(user_args):
                 file.close()
 
                 print("\nDecompressing individual databases...")
-                for index, content in _database.values():
+                for content in _database.values():
                     file = tarfile.open(f"{path}/{name}/{content[3]}")
                     file.extractall(f"{path}/{name}")
                     file.close()
