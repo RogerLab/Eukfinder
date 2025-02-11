@@ -1242,7 +1242,7 @@ def rename_reads(readfile):
     else:
         tail = 'fastq'
     newrfile_path = os.path.join(os.getcwd(), 'tmp.%s.%s' % (orient, tail))
-    cmd = 'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
+    cmd = r'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
     ms = 'rename reads cmd:\n%s' % cmd
     _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
     return newrfile_path, ms
