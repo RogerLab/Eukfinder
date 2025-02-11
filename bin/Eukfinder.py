@@ -23,12 +23,13 @@ __version__ = '1.2.4'
 #   End Info   #
 
 # database info
-_all_db = ["eukfinder databases", "84 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs.tar.gz", "eukfinder_dbs.tar.gz"]
+# NOTE: The test database is left out because the all db tarball does not include it at the moment
+_all_db = ["eukfinder databases", "84 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all.tar.gz", "eukfinder_dbs_all.tar.gz"]
 
 _database = {
-    "1": ["acc2tax database", "39 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz", "acc2tax_db.tar.gz"],
+    "1": ["acc2tax database placeholder", "0.75 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_fake_db.tar.gz", "acc2tax_fake_db.tar.gz"],
     "2": ["centrifuge database", "75 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
-    "3": ["PLAST database", "3.9 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/plast_db.tar.gz", "plast_db.tar.gz"],
+    "3": ["PLAST database", "3.9 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
     "4": ["Human Genome for read decontamination", "0.96 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
     "5": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
 }
@@ -1958,6 +1959,7 @@ def perform_long_seqs(user_args):
 
     return 'Done'
 
+# NOTE: It is perhaps worth while to verify checksum in the future
 def perform_download_db(user_args):
     name = user_args['name']
 
@@ -1987,9 +1989,15 @@ def perform_download_db(user_args):
                 file.extractall(f"{path}/{name}")
                 file.close()
 
-                # TODO: decompress individual dbs too! Remember to check if the content changed on perun
+                print("\nDecompressing individual databases...")
+                for index, content in _database:
+                    file = tarfile.open(f"{path}/{name}/{content[3]}")
+                    file.extractall(f"{path}/{name}")
+                    file.close()
+                    os.remove(f"{path}/{name}/{content[3]}")
 
-                sys.exit(f"\nDatabases downloaded in {path}/{name}, exiting...")
+                os.remove(f"{path}/{name}/{_all_db[3]}")
+                sys.exit(f"\nDatabases downloaded and decompressed in {path}/{name}, exiting...")
             elif user_input == "no":
                 while True:
                     print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
