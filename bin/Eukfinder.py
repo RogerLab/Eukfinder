@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import tarfile
 import ete3
 import glob
 import time
@@ -12,17 +13,29 @@ import pandas as pd
 from subprocess import PIPE, run
 from joblib import Parallel, delayed
 import argparse
+import urllib.request
 
 
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.0.0'
+__version__ = '1.2.3'
 #   End Info   #
 
+# database info
+# NOTE: The test database is left out because the all db tarball does not include it at the moment
+_all_db = ["eukfinder databases", "74 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all.tar.gz", "eukfinder_dbs_all.tar.gz"]
+
+_database = {
+    "1": ["acc2tax database placeholder", "0.76 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz", "acc2tax_db.tar.gz"],
+    "2": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
+    "3": ["PLAST database", "3.6 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
+    "4": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
+    "5": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
+}
+
+
 # --- preparation ---
-
-
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
              mlenght, threads, leading_trim, trail_trim):
 
@@ -1231,7 +1244,7 @@ def input_check_and_setup(user_args):
                      plast_path, map_id_path, n_cpu,
                      max_plast, e_value, pid, user_args['func'].__name__,
                      base_outname, max_mem, cdb_path,
-                     cov, minhit_len, k]  #aplast_path, amap_id_path, 
+                     cov, minhit_len, k]  #aplast_path, amap_id_path,
     else:
         arguments = [tax_up, reads_paths, redef_reads, plast_path,
                      map_id_path, n_cpu, max_plast,
@@ -1709,7 +1722,7 @@ def plast_search_n_results(CPUs, pDBpath, working_dfs, evalue, pid, cov, lr):
 
 
 def create_df_taxonomy(plast_outputs_list, working_dfs,
-                       pid, seqidtaxid_map=None): #taxDBpath, 
+                       pid, seqidtaxid_map=None): #taxDBpath,
     """
 
     :param plast_outputs_list:
@@ -1739,7 +1752,7 @@ def create_df_taxonomy(plast_outputs_list, working_dfs,
             if seqidtaxid_map is not None:
                 print("IF def create_df_taxonomy: seqidtaxid_map is not None\n")
                 dfacc2tax = customtaxtranslation(seqidtaxid_map, 'Group',  plast_output)
-                                                
+
                 print("\n dfacc2tax IN create_df_taxonomy,\n", dfacc2tax)
                 if dfacc2tax.empty:
                     ms = 'Something seems wrong with the acc2tax information '
@@ -2088,7 +2101,7 @@ def mini_loop(user_args_lst, ftype):
     return 'Done'
 
 
-def Perform_prep(user_args):
+def perform_prep(user_args):
     """
     Full argument set
     :param user_args: trimmomatic arguments
@@ -2294,7 +2307,7 @@ def program_exists(name):
     return shutil.which(name) is not None
 
 
-def Perform_eukfinder(user_args):
+def perform_eukfinder(user_args):
     """
 
     :param user_args:
@@ -2317,7 +2330,7 @@ def Perform_eukfinder(user_args):
     tax_up, reads_paths, redef_reads, redef_class, \
     plast_path, map_id_path, ncpu, max_plast, \
     e_value, pid, mode, base_outname, max_mem, cdb_path,  \
-    cov, mhlen, kmers = input_check_and_setup(user_args)  #aplast_path, amap_id_path, 
+    cov, mhlen, kmers = input_check_and_setup(user_args)  #aplast_path, amap_id_path,
 
     dirname = 'Eukfinder_Temps'
     mkdir(dirname)
@@ -2463,13 +2476,7 @@ def Perform_eukfinder(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
 
-def Perform_long_seqs(user_args):
-
-    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
-    ms = 'run DEFPerform_long_seqs %s\n' %custom_datetime
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-
-
+def perform_long_seqs(user_args):
     #
     start_time = time.time()
     stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
@@ -2561,6 +2568,95 @@ def Perform_long_seqs(user_args):
     return 'Done'
 
 
+# NOTE: It is perhaps worth while to verify checksum in the future
+def perform_download_db(user_args):
+    name = user_args['name']
+
+    if user_args['path'] == ".":
+        path = os.getcwd()
+    else:
+        path = user_args['path']
+
+    try:
+        os.mkdir(f"{path}/{name}")
+    except FileExistsError:
+        sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+
+    print(f"Created {path}/{name}\n")
+
+    try:
+        while True:
+            user_input = input(f"Would you like to download all databases ({_all_db[1]})? (yes/no)\n>")
+
+            if user_input == "yes":
+                print("\nDownloading...")
+                print("Please do not close tab, this may take a while...")
+                urllib.request.urlretrieve(_all_db[2], f"{path}/{name}/{_all_db[3]}")
+
+                print("\nDecompressing...")
+                file = tarfile.open(f"{path}/{name}/{_all_db[3]}")
+                file.extractall(f"{path}/{name}")
+                file.close()
+
+                print("\nDecompressing individual databases...")
+                for content in _database.values():
+                    file = tarfile.open(f"{path}/{name}/{content[3]}")
+                    file.extractall(f"{path}/{name}")
+                    file.close()
+                    os.remove(f"{path}/{name}/{content[3]}")
+
+                os.remove(f"{path}/{name}/{_all_db[3]}")
+                sys.exit(f"\nDatabases downloaded and decompressed in {path}/{name}, exiting...")
+            elif user_input == "no":
+                while True:
+                    print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                    print(f"1. {_database['1'][0]} - {_database['1'][1]}")
+                    print(f"2. {_database['2'][0]} - {_database['2'][1]}")
+                    print(f"3. {_database['3'][0]} - {_database['3'][1]}")
+                    print(f"4. {_database['4'][0]} - {_database['4'][1]}")
+                    print(f"5. {_database['5'][0]} - {_database['5'][1]}")
+                    user_input = input("\nOr type exit, if you would like to skip for now:\n>")
+
+                    if user_input == "exit":
+                        os.rmdir(f"{path}/{name}")
+                        print(f"\nDeleted {path}/{name}\n")
+                        sys.exit("No downloads, exiting...")
+
+                    selected = user_input.split(" ") if user_input.strip() else []
+
+                    if not selected:
+                        print("\nInvalid option. Enter indices separated by spaces.\n")
+                        continue
+
+                    print("\nDownloading...\n")
+
+                    for index in selected:
+                        if index in _database.keys():
+                            db_path = f"{path}/{name}/{index}_{_database[index][0]}"
+                            os.mkdir(db_path)
+
+                            print(f"Downloading {_database[index][0]}...")
+                            urllib.request.urlretrieve(_database[index][2],f"{db_path}/{_database[index][3]}")
+
+                            print(f"Decompressing {_database[index][0]}...")
+                            file = tarfile.open(f"{db_path}/{_database[index][3]}")
+                            file.extractall(db_path)
+                            file.close()
+
+                            os.remove(f"{db_path}/{_database[index][3]}")
+
+                            print(f"{_database[index][0]} downloaded and decompressed.\n")
+                        else:
+                            print(f"WARNING: Unrecognized index {index}, skipping...\n")
+
+                    break
+
+                sys.exit(f"Database(s) downloaded in {path}/{name}, exiting...")
+
+            print("\nInvalid option. Enter yes or no.\n")
+    except Exception as e:
+        exit(f"Error: {e}")
+
 def short_seqs(args):
 
     custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
@@ -2605,6 +2701,9 @@ def long_seqs(args):
     params = args.n, args.t, args.e, args.z, args.mhlen
     return reads, paths, params, bname
 
+def download_db(args):
+    path = args.path
+    return path
 
 def parse_arguments():
 
@@ -2732,6 +2831,12 @@ def parse_arguments():
                                        'plast searches', True],
     }
 
+    parser_download_db = subparsers.add_parser("download_db")
+    parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
+                                    help="directory name for storing the databases")
+    parser_download_db.add_argument("-p", "--path", type=str, default=".",
+                                    help="filesystem path for storing the databases")
+
     for key in myargs_lr:
         try:
             group3.add_argument(key, myargs_lr[key][0],
@@ -2746,6 +2851,7 @@ def parse_arguments():
     parser_short_seqs.set_defaults(func=short_seqs)
     parser_read_prep.set_defaults(func=read_prep)
     parser_long_seqs.set_defaults(func=long_seqs)
+    parser_download_db.set_defaults(func=download_db)
 
     return parser.parse_args()
 
@@ -2760,11 +2866,13 @@ def main():
 
     dic_args = vars(args)
     if dic_args['func'].__name__ == 'read_prep':
-        Perform_prep(dic_args)
+        perform_prep(dic_args)
     elif dic_args['func'].__name__ == 'short_seqs':
-        Perform_eukfinder(dic_args)
+        perform_eukfinder(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
-        Perform_long_seqs(dic_args)
+        perform_long_seqs(dic_args)
+    elif dic_args["func"].__name__ == "download_db":
+        perform_download_db(dic_args)
 
 
 if __name__ == '__main__':
