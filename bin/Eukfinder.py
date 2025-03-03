@@ -490,7 +490,7 @@ def matchmaker(ncbi, regex, readid, taxid):
             match_word = match.group()
         return readid, match_word
     else:
-        return readid, np.NaN
+        return readid, np.nan
 
 
 def binningbytaxonomy(report_df):
@@ -537,7 +537,7 @@ def taxpickup(binned_lists, main_df):
                                          columns=['readID', 'Group'])
         main_df = main_df.merge(centrifuged_taxId, on='readID', how='left')
     else:
-        main_df = main_df.assign(Group=np.NaN)
+        main_df = main_df.assign(Group=np.nan)
     return main_df
 
 
@@ -553,15 +553,18 @@ def dataframe_collection(df, npartitions):
     ms = 'run DEFdataframe_collection %s\n' %custom_datetime
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
-
     df_size = len(df.index)
+
     if npartitions > df_size:
         ms = 'Number of partitions is larger '
         ms += 'than dataframe size. The number of'
         ms += 'partitions will be set to: %s' % df_size
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         npartitions = df_size
-    df_split = np.array_split(df, npartitions)
+
+    indices = np.array_split(np.arange(len(df)), npartitions)
+    df_split = [df.iloc[idx] for idx in indices]
+
     return df_split
 
 
@@ -1040,7 +1043,7 @@ def nullandmerged(df1, df2):
 
 
     if not 'Group' in df1.columns:
-        df1 = df1.assign(Group=np.NaN)
+        df1 = df1.assign(Group=np.nan)
     df1.Group = df1.Group.astype(str)
     df1 = df1.set_index('readID')
     df2 = df2.set_index('readID')
@@ -1069,7 +1072,7 @@ def empty(df):
 
 
     if not 'Group' in df.columns:
-        df = df.assign(Group=np.NaN)
+        df = df.assign(Group=np.nan)
     pre_unknown = set(df['readID'].tolist())
     merged = pd.DataFrame()
     ms = 'In emtpy: pre_unknown\n %s, merged\n%s' % (pre_unknown, merged)
@@ -1090,12 +1093,8 @@ def input_check_and_setup(user_args):
 
 
     # Check that plast is in path
-    plast_exists = program_exists('plast')
-    #acc2tax_custom_exists = program_exists('acc2tax')
-    if plast_exists is False:
-        m = 'Eukfinder requirements are not met: '
-        m += 'plast is installed: ', plast_exists
-        m += '\nExiting program'
+    if not program_exists('plast'):
+        m = 'Eukfinder requirement not met: plast is not installed!\nExiting program...'
         print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
@@ -1201,8 +1200,8 @@ def input_check_and_setup(user_args):
         cov = 0.0
 
     if len(glob.glob('%s.*.cf' % user_args['cdb'])) != 4:
-        cdb = '\nCentrifuge database does not exist in path.\n'
-        cdb += 'Exiting program.\n'
+        cdb = '\nCentrifuge database cannot be found!\n'
+        cdb += 'Exiting program...\n'
         print(cdb, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
     cdb_path = user_args['cdb']
@@ -1514,7 +1513,7 @@ def rename_reads(readfile):
     else:
         tail = 'fastq'
     newrfile_path = os.path.join(os.getcwd(), 'tmp.%s.%s' % (orient, tail))
-    cmd = 'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
+    cmd = r'seqkit replace -p "\s.+" %s -o %s' % (original_path, newrfile_path)
     ms = 'rename reads cmd:\n%s' % cmd
     _ = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
     return newrfile_path, ms
