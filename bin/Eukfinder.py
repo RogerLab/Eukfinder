@@ -553,15 +553,18 @@ def dataframe_collection(df, npartitions):
     ms = 'run DEFdataframe_collection %s\n' %custom_datetime
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
-
     df_size = len(df.index)
+
     if npartitions > df_size:
         ms = 'Number of partitions is larger '
         ms += 'than dataframe size. The number of'
         ms += 'partitions will be set to: %s' % df_size
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         npartitions = df_size
-    df_split = np.array_split(df, npartitions)
+
+    indices = np.array_split(np.arange(len(df)), npartitions)
+    df_split = [df.iloc[idx] for idx in indices]
+
     return df_split
 
 
