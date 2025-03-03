@@ -490,7 +490,7 @@ def matchmaker(ncbi, regex, readid, taxid):
             match_word = match.group()
         return readid, match_word
     else:
-        return readid, np.NaN
+        return readid, np.nan
 
 
 def binningbytaxonomy(report_df):
@@ -537,7 +537,7 @@ def taxpickup(binned_lists, main_df):
                                          columns=['readID', 'Group'])
         main_df = main_df.merge(centrifuged_taxId, on='readID', how='left')
     else:
-        main_df = main_df.assign(Group=np.NaN)
+        main_df = main_df.assign(Group=np.nan)
     return main_df
 
 
@@ -1040,7 +1040,7 @@ def nullandmerged(df1, df2):
 
 
     if not 'Group' in df1.columns:
-        df1 = df1.assign(Group=np.NaN)
+        df1 = df1.assign(Group=np.nan)
     df1.Group = df1.Group.astype(str)
     df1 = df1.set_index('readID')
     df2 = df2.set_index('readID')
@@ -1069,7 +1069,7 @@ def empty(df):
 
 
     if not 'Group' in df.columns:
-        df = df.assign(Group=np.NaN)
+        df = df.assign(Group=np.nan)
     pre_unknown = set(df['readID'].tolist())
     merged = pd.DataFrame()
     ms = 'In emtpy: pre_unknown\n %s, merged\n%s' % (pre_unknown, merged)
