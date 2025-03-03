@@ -1200,8 +1200,8 @@ def input_check_and_setup(user_args):
         cov = 0.0
 
     if len(glob.glob('%s.*.cf' % user_args['cdb'])) != 4:
-        cdb = '\nCentrifuge database does not exist in path.\n'
-        cdb += 'Exiting program.\n'
+        cdb = '\nCentrifuge database cannot be found!\n'
+        cdb += 'Exiting program...\n'
         print(cdb, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
     cdb_path = user_args['cdb']
