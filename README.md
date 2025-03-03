@@ -28,13 +28,9 @@ Schematic representation of Eukfinder pipeline:
 
 ![Graphical_abstract](https://github.com/RogerLab/Eukfinder/blob/main/Eukfinder_workflow.jpg)
 
+The Eukfinder documentation is found on the [wiki site](https://github.com/RogerLab/Eukfinder/wiki).
 
-## Contributing
-
-Contributions are what makes the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+All feedback is appreciated! Please [open an issue](https://github.com/RogerLab/Eukfinder/issues) on this repository if you would like to ask a question or make a comment.
 
 <!-- Publication -->
 ## Publication/Citation

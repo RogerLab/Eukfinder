@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import tarfile
 import ete3
 import glob
 import time
@@ -12,19 +13,36 @@ import pandas as pd
 from subprocess import PIPE, run
 from joblib import Parallel, delayed
 import argparse
+import urllib.request
 
 
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.0.0'
+__version__ = '1.2.3'
 #   End Info   #
 
+# database info
+# NOTE: The test database is left out because the all db tarball does not include it at the moment
+_all_db = ["eukfinder databases", "74 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all_v1.2.4.tar.gz", "eukfinder_dbs_all_v1.2.4.tar.gz"]
+
+_database = {
+    "1": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
+    "2": ["PLAST database", "3.6 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
+    "3": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
+    "4": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
+}
+
+
 # --- preparation ---
-
-
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
              mlenght, threads, leading_trim, trail_trim):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFtrimming @ %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     r1_out = '%sR1PT.fq %sR1unPT.fq ' % (bn, bn)
     r2_out = '%sR2PT.fq %sR2unPT.fq ' % (bn, bn)
     cmd = 'trimmomatic PE -threads %s -trimlog %s.trim.log ' % (threads, bn)
@@ -35,6 +53,7 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
                                                           mlenght)
 
     ms = 'trimmomatic cmd_line:\n%s\n' % cmd
+    ms += 'run trimmomatic at %s\n' %custom_datetime
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -48,6 +67,11 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
 
 
 def bowtie2build(hostg):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFbowtie2build %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     bn = os.path.split(hostg)[-1]
     bn = re.split(r'.fasta$|.fa$|.fas$', bn, flags=re.IGNORECASE)[0]
     cmd = 'bowtie2-build -f %s %s' % (hostg, bn)
@@ -63,6 +87,11 @@ def bowtie2build(hostg):
 
 
 def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFbowtie2 at %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     if typ == 'fastq-host':
         cmd = 'bowtie2 --local --phred33 -q --threads %s -x %s' % (threads,
                                                                    hindex)
@@ -99,6 +128,12 @@ def bowtie2(bn, threads, r1, r2, catr1r2, hindex, typ):
 
 
 def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcentrifuge %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     if fastq:
         gline = 'centrifuge -q --phred33 --threads %s -k %s ' % (threads, k)
         gline += '--min-hitlen %s -x %s ' % (mhlen, dbpath)
@@ -127,6 +162,11 @@ def centrifuge(bn, bn_tuple, threads, mhlen, dbpath, k, pair=True, fastq=True):
 
 
 def centrifuge_output_checkup(infile, header):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcentrifuge_output_checkup %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     if os.path.exists(infile) and os.stat(infile).st_size != 0:
 
          v = head2(infile)
@@ -135,6 +175,11 @@ def centrifuge_output_checkup(infile, header):
 
 
 def cats(b_outname, dir_path):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcats %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     os.chdir('..')
     wd = os.path.join(dir_path, 'Classified_reads')
     # up_dir = cwd.split('/Temp')[0]
@@ -152,6 +197,11 @@ def reading_reports(infile):
     :param infile:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFreading_reports %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     ms = 'Processing %s ...' % infile
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     if infile is not None:
@@ -185,6 +235,12 @@ def minimal(tupla):
     :param tupla:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFminimal %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # presort... groupby will retain the relative position
     chunk, sorting_list, typ, pid, cov, lr = tupla
     if not lr:
@@ -232,6 +288,12 @@ def parseplastoutput(single_plout, ident, cov, lr):
     :param single_plout:
     :return:
     """
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFparseplastoutput %s\n' %custom_datetime
+    ms = '\t single_plout in parseplastoutput %s\n' %single_plout
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     colnames = ['query ID', 'subject ID', 'pidentity', 'aln_length',
                 'nb.misses', 'nb.gaps', 'qbegin', 'qend', 'sbegin',
                 'send', 'e-value', 'bit score', 'unknown', 'qlen',
@@ -275,6 +337,10 @@ def parseplastoutput(single_plout, ident, cov, lr):
     #
     acc2tax = acc2tax.groupby('Accession', as_index=False).first()
 
+    print("IN def parseplastoutput: acc2tax\n", acc2tax.info())
+    print("IN def parseplastoutput: acc2tax dataframe:\n", acc2tax.head())
+
+
     # renaming column to match that of the main dataframe and acc2tax
     plouts = plouts.rename(columns={'query ID': 'readID'})
 
@@ -282,6 +348,9 @@ def parseplastoutput(single_plout, ident, cov, lr):
     plouts = plouts.merge(acc2tax, on='subject ID',
                           how='outer')
     # return a dataframe with all columns plus an accession id
+
+    print("IN def parseplastoutput: plouts\n", plouts.info())
+
     return plouts
 
 
@@ -294,6 +363,11 @@ def cmd(CPUs, chunk, pDBpath, evalue, long=False):
     :param evalid:
     :return:
     """
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcmd %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # evalue = float(evalid.split(':')[0])
     line = 'plast -e %s -max-hit-per-query 1 -outfmt 2 '
     line += '-a %s -p plastn -i %s -d %s -o %s.plout '
@@ -310,11 +384,18 @@ def cmd(CPUs, chunk, pDBpath, evalue, long=False):
 
 
 def my_run(cmdline):
+
     """
 
     :param cmdline:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFmy_run %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     run(cmdline, stderr=PIPE,
         stdout=PIPE, shell=True, bufsize=1,
         close_fds=True, universal_newlines=True)
@@ -322,13 +403,17 @@ def my_run(cmdline):
 
 def plastsearches(CPUs, pDBpath, evalue, pattern):
     """
-
     :param CPUs:
     :param pDBpath:
     :param evalue:
     :param pattern:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFplastsearches %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     abs_pattern = os.path.join(os.getcwd(), pattern)
     queries = glob.glob(abs_pattern)
     # queries = glob.glob(pattern): i added 2 lines above instead of this one
@@ -353,6 +438,13 @@ def parsingplastsearches(list_of_results, pid, cov, lr):
     :param list_of_results:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFparsingplastsearches %s\n' %custom_datetime
+    ms = '\t list_of_results in DEFparsingplastsearches %s\n' %list_of_results
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     time.sleep(5)
     print('list_of_results', list_of_results)
     if len(list_of_results[0]) != 0:
@@ -370,7 +462,7 @@ def parsingplastsearches(list_of_results, pid, cov, lr):
             allplast_outs.append((label, pd.DataFrame()))
         return allplast_outs
     else:
-        print('blast results are empty. exiting program until bug is fixed')
+        print('Plast results are empty. exiting program until bug is fixed')
         sys.exit(-1)
 
 
@@ -383,6 +475,8 @@ def matchmaker(ncbi, regex, readid, taxid):
     :param taxid:
     :return:
     """
+
+
     lineage = ncbi.get_lineage(taxid)
     Se_lineage = pd.Series(ncbi.get_taxid_translator
                            (lineage), name=taxid)
@@ -403,6 +497,7 @@ def binningbytaxonomy(report_df):
     """
     slice reports by taxonomic domain
     """
+
     ncbi = ete3.NCBITaxa()
     regex = re.compile(r'^\bBacteria\b$|^\bArchaea\b$|'
                        r'^\bEukaryota\b$|vir',
@@ -428,6 +523,11 @@ def taxpickup(binned_lists, main_df):
     :param main_df:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFtaxpickup %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     maintaxidlist = [tupla for sublist in
                      binned_lists for tupla in sublist]
 
@@ -448,6 +548,12 @@ def dataframe_collection(df, npartitions):
     :param npartitions:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFdataframe_collection %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     df_size = len(df.index)
     if npartitions > df_size:
         ms = 'Number of partitions is larger '
@@ -470,6 +576,11 @@ def directplast(new_dir_path, file_name, suffix, name, max_plast, cpus):
     :param cpus:
     :return:
     """
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFdirectplast %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     try:
         cmd = 'seqkit fq2fa %s | seqkit split -p %s -j %s -' % (file_name,
                                                                 max_plast,
@@ -494,6 +605,13 @@ def relocating_files(suffix, new_dir_path):
     :param new_dir_path:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFrelocating_files %s\n' %custom_datetime
+    ms = '\t new_dir_path in relocating_files %s\n' %new_dir_path
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     splits = os.path.join(os.getcwd(), 'stdin.split')
     files = glob.glob('%s/*' % splits)
     count = 0
@@ -508,6 +626,12 @@ def relocating_files(suffix, new_dir_path):
 
 
 def isfasta(infile):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFisfasta %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     cmd = 'head -1 %s' % infile
     ms = 'cmd isfasta is: %s' % cmd
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
@@ -532,6 +656,13 @@ def split_reads(new_dir_path, reads_to_select, read_file,
     :param max_plast:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFsplit_reads %s\n' %custom_datetime
+    ms = '\t new_dir_path in split_reads %s\n' %new_dir_path
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     path_list = os.path.join(os.getcwd(), '%s_list.tmp' % suffix)
     handle = open(path_list, 'w')
     for read in reads_to_select:
@@ -572,6 +703,13 @@ def slicing(new_dir_path, main_df, file_name, df_class_report,
     :param max_plast:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFslicing %s\n' %custom_datetime
+    ms = '\t new_dir_path in slicing %s\n' %new_dir_path
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     start_time = time.time()
     if cpus <= 10:
         n_chunks = 10
@@ -616,6 +754,12 @@ def Taxonomy_translation(acc2DBpath, pre_acc2tax_df, suffix, typ):
     :param typ:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFTaxonomy_translation %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # writing acc2taxIN as input for acc2tax software
     base_fname = string_out(pre_acc2tax_df, suffix, typ)
     ms = 'Extracting taxonomy with acc2tax...'
@@ -632,6 +776,7 @@ def Taxonomy_translation(acc2DBpath, pre_acc2tax_df, suffix, typ):
                             dtype=object)
     # adding readIDs with taxonomy
     if not taxdump.empty:
+        print("IF def Taxonomy_translation: not taxdump.empty")
         taxdump = pre_acc2tax_df.merge(taxdump,
                                        on='Accession', how='left')
 
@@ -663,6 +808,15 @@ def customtaxtranslation(seqidtaxid_map, parseby, plast_output):
     :param plast_output:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcustomtaxtranslation %s\n' %custom_datetime
+    ms += '\n\tseqidtaxid_map in customtaxtranslation: %s\n' %seqidtaxid_map
+    ms += '\n\tparseby in customtaxtranslation: %s\n' %parseby
+    ms += '\n\tplast_output in customtaxtranslation: %s\n' %plast_output
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # subject ID and first column of seqidtaxid_map must match
     ms = 'Using custom taxonomy ...'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
@@ -675,6 +829,10 @@ def customtaxtranslation(seqidtaxid_map, parseby, plast_output):
     # for now make sure that is 'Group'
     taxids = taxids.loc[:, ['readID', parseby]]
     taxids = taxids.groupby('readID', as_index=False).first()
+
+    ms = '\ttaxids in customtaxtranslation: %s\n' %taxids.head()
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     return taxids
 
 
@@ -686,6 +844,13 @@ def string_out(df, suffix, typ='RefSeq'):
     :param typ:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFstring_out %s\n' %custom_datetime
+    ms = '\t df in DEFstring_out %s\n' %df
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     outname = 'acc2taxIN'
     if (os.path.isfile('%s%s' % (outname, suffix))
             or os.path.isfile('acc2taxOUT%s.raw' % suffix)):
@@ -716,6 +881,12 @@ def string_out(df, suffix, typ='RefSeq'):
 
 
 def other_dfs(df):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFother_dfs %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     lista = ['Archaea', 'Bacteria',
              'Eukaryota', 'Vir']
     xdf = df[~df['Group'].isin(lista)]
@@ -730,6 +901,12 @@ def bin(gdf, group, label):
     :param label:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFbin %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     try:
         x = gdf.get_group(group)
         _ = x.to_csv('%s_grouped_by_%s.tsv' % (label, group),
@@ -754,6 +931,12 @@ def tokeep(grouped_df, group,
     :param label:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFtokeep %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     try:
         eg = [excludegroup]
         df = grouped_df.get_group(group)
@@ -777,6 +960,12 @@ def intersects(set1, set2, set3):
     :param set3:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFintersects %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     isects = [set1.intersection(set2),
               set1.intersection(set3),
               set2.intersection(set3)]
@@ -797,6 +986,14 @@ def grouper(label, pref, df, reads):
     :param reads:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFgrouper %s\n' %custom_datetime
+    ms += '\t label in grouper %s\n' %label
+    ms += '\t pref in grouper %s\n' %pref
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     merged, pre_unknown = df
     if not merged.empty:
         _ = merged.to_csv('%s_merged_df.tsv' % label, sep='\t', header=True)
@@ -836,6 +1033,12 @@ def nullandmerged(df1, df2):
     :param df2:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFnullandmerged %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     if not 'Group' in df1.columns:
         df1 = df1.assign(Group=np.NaN)
     df1.Group = df1.Group.astype(str)
@@ -859,6 +1062,12 @@ def empty(df):
     :param df:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFempty %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     if not 'Group' in df.columns:
         df = df.assign(Group=np.NaN)
     pre_unknown = set(df['readID'].tolist())
@@ -874,13 +1083,18 @@ def input_check_and_setup(user_args):
     :param user_args: dictionary containing arguments
     :return: type: list of the checked arguments
     """
-    # Check that plast and acc2tax are in path
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFinput_check_and_setup %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
+    # Check that plast is in path
     plast_exists = program_exists('plast')
-    acc2tax_custom_exists = program_exists('acc2tax')
-    if plast_exists is False or acc2tax_custom_exists is False:
+    #acc2tax_custom_exists = program_exists('acc2tax')
+    if plast_exists is False:
         m = 'Eukfinder requirements are not met: '
-        m += f'\nplast is installed: {plast_exists}'
-        m += f'\nacc2tax is installed: {acc2tax_custom_exists}'
+        m += 'plast is installed: ', plast_exists
         m += '\nExiting program'
         print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
@@ -889,7 +1103,7 @@ def input_check_and_setup(user_args):
     # --- Global required values ---
     map_id_path = user_args['plast_id_map']
     plast_path = user_args['plast_database']
-    acc2tax_path = user_args['acc2tax_database']
+    #acc2tax_path = user_args['acc2tax_database']
     pid = user_args['pid']
     cov = user_args['cov']
     e_value = user_args['e_value']
@@ -966,18 +1180,18 @@ def input_check_and_setup(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
-    acc2tax_fn = ['nodes.dmp', 'names.dmp', 'acc2tax_prot_all.txt',
-                  'acc2tax_nucl_all.txt']
-    for fn in acc2tax_fn:
-        apath = os.path.join(acc2tax_path, fn)
-        if not os.path.exists(apath):
-            ms = '\n\nSomething is wrong with the acc2tax database.\n'
-            ms += 'Please make sure you specify the path to a '
-            ms += 'directory that contains the following files: '
-            ms += 'nodes.dmp, names.dmp, acc2tax_prot_all.txt, '
-            ms += 'acc2tax_nucl_all.txt\nTerminating program.'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-            sys.exit(0)
+    #acc2tax_fn = ['nodes.dmp', 'names.dmp', 'acc2tax_prot_all.txt',
+    #              'acc2tax_nucl_all.txt']
+    #for fn in acc2tax_fn:
+    #    apath = os.path.join(, fn)
+    #    if not os.path.exists(apath):
+    #        ms = '\n\nSomething is wrong with the acc2tax database.\n'
+    #        ms += 'Please make sure you specify the path to a '
+    #        ms += 'directory that contains the following files: '
+    #        ms += 'nodes.dmp, names.dmp, acc2tax_prot_all.txt, '
+    #        ms += 'acc2tax_nucl_all.txt\nTerminating program.'
+    #        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    #        sys.exit(0)
 
     if e_value is None:
         e_value = 1.0
@@ -995,8 +1209,8 @@ def input_check_and_setup(user_args):
     minhit_len = user_args['mhlen']
 
     if not user_args['func'].__name__ == 'long_seqs':
-        aplast_path = user_args['ancillary_plast_database']
-        amap_id_path = user_args['ancillary_plast_id_map']
+        #aplast_path = user_args['ancillary_plast_database']
+        #amap_id_path = user_args['ancillary_plast_id_map']
         # max_len = user_args['mlen']
         max_mem = user_args['max_m']
         # kmers
@@ -1006,18 +1220,18 @@ def input_check_and_setup(user_args):
             k = suitable_kmers(user_args['kmers'])
 
         # cdb_path = user_args['cdb']
-        if aplast_path is None or not os.path.exists(aplast_path):
-            aplast_path = plast_path
-            amap_id_path = map_id_path
-            ms = '\nNo ancillary plast database found. Current plast_database '
-            ms += f'{plast_path} will be used for re-classification\n'
-            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        # if aplast_path is None or not os.path.exists(aplast_path):
+        #     aplast_path = plast_path
+        #     amap_id_path = map_id_path
+        #     ms = '\nNo ancillary plast database found. Current plast_database '
+        #     ms += f'{plast_path} will be used for re-classification\n'
+        #     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
-        if os.path.exists(aplast_path):
-            if not os.path.exists(amap_id_path):
-                ms = '\n\nNo map for plast_database was found. Exiting program'
-                print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-                sys.exit(0)
+        # if os.path.exists(aplast_path):
+        #     if not os.path.exists(amap_id_path):
+        #         ms = '\n\nNo map for plast_database was found. Exiting program'
+        #         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        #         sys.exit(0)
 
         # if len(glob.glob('%s.*.cf' % user_args['cdb'])) != 4:
         #     cdb = '\nCentrifuge database does not exist in path.\n'
@@ -1026,24 +1240,34 @@ def input_check_and_setup(user_args):
         #     sys.exit(0)
 
         arguments = [tax_up, reads_paths, redef_reads, redef_class,
-                     plast_path, map_id_path, acc2tax_path, n_cpu,
+                     plast_path, map_id_path, n_cpu,
                      max_plast, e_value, pid, user_args['func'].__name__,
                      base_outname, max_mem, cdb_path,
-                     aplast_path, amap_id_path, cov, minhit_len, k]
+                     cov, minhit_len, k]  #aplast_path, amap_id_path,
     else:
         arguments = [tax_up, reads_paths, redef_reads, plast_path,
-                     map_id_path, acc2tax_path, n_cpu, max_plast,
+                     map_id_path, n_cpu, max_plast,
                      e_value, pid, base_outname, cov,  cdb_path, minhit_len]
 
     return arguments
 
 
 def head2(infile):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFhead2 %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     o = run(f'head -2 {infile}', stdout=PIPE, stderr=PIPE, shell=True)
     return o.stdout.decode('utf-8').strip('\n').split('\n')
 
 
 def validator(lines_list, allowed_bases, s, ms):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFvalidator %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     if len(lines_list) == 2:
         header, seq = lines_list[0], lines_list[1]
         if header.startswith(s):
@@ -1073,6 +1297,12 @@ def validator(lines_list, allowed_bases, s, ms):
 
 
 def fastaq_validator(lines_list, infile, seqtype):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFfastaq_validator %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # Recogize file type of very large files relaying on the first sequence.
     # it does not consider sequence duplications or errors in sequences due
     # to file size
@@ -1090,6 +1320,12 @@ def fastaq_validator(lines_list, infile, seqtype):
 
 
 def report_validator(lines_list, infile, seqtype):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFreport_validator %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     expected = ['readID', 'seqID', 'taxID', 'score', '2ndBestScore',
                 'hitLength', 'queryLength', 'numMatches']
     if len(lines_list) == 2:
@@ -1106,6 +1342,12 @@ def report_validator(lines_list, infile, seqtype):
 
 
 def validate_input(infile, seqtype):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFvalidate_input %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     print(f'Quick input format check for {infile}',
           end='\n', file=sys.stdout, flush=True)
     ms = 'Exiting program'
@@ -1146,6 +1388,12 @@ def validate_input(infile, seqtype):
 
 
 def suitable_kmers(k):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFsuitable_kmers %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     newk = k.replace(' ', '')
     if ',' not in newk:
         ms = 'A single kmer appears to have been specified: %s. ' % k
@@ -1175,6 +1423,12 @@ def bytearray_sets(infile):
     :param infile:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFbytearray_sets %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     start_time = time.time()
     mycmd = 'seqkit seq -n %s' % infile
     _ = run(mycmd, stderr=PIPE, stdout=PIPE, shell=True)
@@ -1203,6 +1457,12 @@ def cpu_chunk(cpus, maxplast):
     :param maxplast:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcpu_chunk %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     cpus = int(cpus)
     max_plast = int(maxplast)
     if cpus < max_plast:
@@ -1221,6 +1481,12 @@ def getting_prefix(file_path):
     :param file_paths:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFgetting_prefix %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     fname = file_path.split(os.sep)[-1]
     fname = fname.lower()
     prefix = [None if fname is None else
@@ -1234,6 +1500,12 @@ def rename_reads(readfile):
     :param readfile:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFrename_reads %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     read, orient = readfile
     original_path = os.path.abspath(read)
     ftype = re.split(r'.fastq$|.fq$', read.lower())
@@ -1260,6 +1532,12 @@ def pair_read_handler(cpus, max_files, files_paths, reports_list,
     :param stamp:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFpair_read_handler %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     ms = 'Pair read handler..'
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     reports = [reading_reports(inf) for inf in reports_list]
@@ -1341,6 +1619,12 @@ def single_read_handler(cpus, max_files, files_paths, reports_list,
     :param stamp:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFsingle_read_handler %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     reports = [reading_reports(inf) for inf in reports_list]
     reads = [bytearray_sets(readfile) for readfile in readfile_list]
     dirname = 'tmps_%s_%s' % (base_outname, stamp)
@@ -1374,6 +1658,12 @@ def unpair_dfs(dirname_path, files_paths, df_un, path1, dfr_un,
     :param name:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFunpair_dfs %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     #
     if not dfr_un.empty:
         _ = dfr_un.to_csv('uReportNR.tsv', sep='\t', header=True)
@@ -1400,6 +1690,12 @@ def plast_search_n_results(CPUs, pDBpath, working_dfs, evalue, pid, cov, lr):
     :return:
     """
 
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFplast_search_n_results %s\n' %custom_datetime
+    ms = '\t working_dfs in DEFplast_search_n_results %s\n' %working_dfs
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # multi-threaded plast searches
     start_time = time.time()
     tmps_outputs = []
@@ -1424,8 +1720,8 @@ def plast_search_n_results(CPUs, pDBpath, working_dfs, evalue, pid, cov, lr):
     return plast_outputs
 
 
-def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
-                       pid, seqidtaxid_map=None):
+def create_df_taxonomy(plast_outputs_list, working_dfs,
+                       pid, seqidtaxid_map=None): #taxDBpath,
     """
 
     :param plast_outputs_list:
@@ -1435,6 +1731,16 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
     :param seqidtaxid_map:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFcreate_df_taxonomy %s\n' %custom_datetime
+    ms += '\n\t plast_outputs_list in create_df_taxonomy %s\n' %plast_outputs_list
+    ms += '\n\t working_dfs in create_df_taxonomy %s\n' %working_dfs
+    ms += '\n\t pid in create_df_taxonomy %s\n' %pid
+
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     cladfs = []
     for entry in plast_outputs_list:
         etk, plast_output = entry
@@ -1443,23 +1749,27 @@ def create_df_taxonomy(plast_outputs_list, taxDBpath, working_dfs,
             if not os.path.isfile(outfile_name):
                 _ = plast_output.to_csv(outfile_name, sep='\t', header=True)
             if seqidtaxid_map is not None:
-                dfacc2tax = customtaxtranslation(seqidtaxid_map, 'Group',
-                                                 plast_output)
+                print("IF def create_df_taxonomy: seqidtaxid_map is not None\n")
+                dfacc2tax = customtaxtranslation(seqidtaxid_map, 'Group',  plast_output)
+
+                print("\n dfacc2tax IN create_df_taxonomy,\n", dfacc2tax)
                 if dfacc2tax.empty:
                     ms = 'Something seems wrong with the acc2tax information '
                     ms += 'provided'
                     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-            else:
-                dfacc2tax = Taxonomy_translation(taxDBpath, plast_output, etk,
-                                                 'RefSeq')
+            #else:
+            #    dfacc2tax = Taxonomy_translation(taxDBpath, plast_output, etk,
+            #                                     'RefSeq')
 
             # --- After plast searches -------------
             # Merging all dataframes by readId using taxonomic info
             # this will fail if there is nothing to merge as it'll generate an
             # empty df
+
+            print("\n working_dfs IN create_df_taxonomy before tmpcladfs,\n", working_dfs)
+
             tmpcladfs = [(label, filename, nullandmerged(df, dfacc2tax),
-                          read_paths) for label, filename, df, read_paths,
-                                          other in working_dfs if
+                          read_paths) for label, filename, df, read_paths,  other in working_dfs if
                          (not dfacc2tax.empty and
                           label.startswith(etk))]
             cladfs.extend(tmpcladfs)
@@ -1482,6 +1792,13 @@ def writinggroups(cladfs, dir_path, boutname):
     :param cladfs:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFwritinggroups %s\n' %custom_datetime
+    ms = '\t  dir_path in DEFwritinggroups %s\n' %dir_path
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     pre_args = []
     for label, prefix, df, read_paths in cladfs:
         pre_args.extend(grouper(label, prefix, df, read_paths))
@@ -1499,6 +1816,12 @@ def isitready(sel_reads, fpath):
     :param fpath:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFisitready %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     while True:
         lcount = run('wc -l %s' % fpath,
                      stderr=PIPE, stdout=PIPE, shell=True)
@@ -1517,6 +1840,11 @@ def writer(args, dir_path, boutname):
     :return:
     """
 
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFwriter %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     group, label, fname, read_set, path = args
 
     if len(read_set) > 0:
@@ -1534,8 +1862,8 @@ def writer(args, dir_path, boutname):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
         start_time = time.time()
-        # patch_path0 = os.path.join(path[0], 'TempEukfinder')
-        # patch_path1 = os.path.join(path[1], 'TempEukfinder')
+        # patch_path0 = os.path.join(path[0], 'Eukfinder_Results')
+        # patch_path1 = os.path.join(path[1], 'Eukfinder_Results')
 
         # use dir_path
         if label == 'Pair':
@@ -1567,14 +1895,14 @@ def writer(args, dir_path, boutname):
                 ms = 'output is not list or scaffold. The fname is %s' % fname
                 print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
                 if isfasta(path):
-                    outname = '%s.%s.fasta' % (fname, group)
+                    outname = 'Eukfinder_results/%s.%s.fasta' % (fname, group)
                 else:
                     outname = 'Classified_reads/%s.%s.un.fq' % (fname, group)
 
             outname_path = os.path.join(dir_path, outname)
 
             if 'scf_' in outname_path:
-                pathched_path = os.path.join(dir_path, 'Classified_contigs')
+                pathched_path = os.path.join(dir_path, 'Eukfinder_results')
                 outname_path = os.path.join(pathched_path, outname)
 
             if isinstance(path, list):
@@ -1604,6 +1932,12 @@ def writer(args, dir_path, boutname):
 # --- post classification ---
 
 def standard_out(program, outinfo):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFstandard_out %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     # getting standard output
     o1 = outinfo.stdout.decode('utf-8').strip('\n')
     o2 = outinfo.stderr.decode('utf-8').strip('\n')
@@ -1614,6 +1948,12 @@ def standard_out(program, outinfo):
 
 
 def assembly(read_tuple, basename, threads, maxmem, k):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFassembly %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     ms = 'Starting assembly phase. This will take a while...'
     print(ms, sep='\t', end='\n', file=sys.stdout, flush=True)
     R1, R2, uR1R2 = read_tuple
@@ -1664,6 +2004,12 @@ def assembly(read_tuple, basename, threads, maxmem, k):
 
 
 def change_c_names(new_dir, assembl, basename):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFchange_c_names %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     assembly = os.path.join(new_dir, assembl)
     new = {}
     track = {}
@@ -1695,6 +2041,12 @@ def change_c_names(new_dir, assembl, basename):
 
 
 def post_assembly(threads, out_name, fasta_path, dbpath, mhlen):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFpost_assembly %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     os.chdir('Centrifuge_contig_classification')
     cline = 'centrifuge -f --threads %s -k 1 ' % threads
     cline += '--min-hitlen %s -x %s ' % (mhlen, dbpath)
@@ -1713,6 +2065,12 @@ def post_assembly(threads, out_name, fasta_path, dbpath, mhlen):
 
 
 def name_check(infile):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFname_check %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     cmd = 'head -1 %s' % infile
     head = run(cmd, stderr=PIPE, stdout=PIPE, shell=True)
     myheader = head.stdout.decode('utf-8').strip('\n')
@@ -1723,6 +2081,12 @@ def name_check(infile):
 # --- Execute ---
 
 def mini_loop(user_args_lst, ftype):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFmini_loop %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     for file in user_args_lst:
         if os.path.exists(file) and os.stat(file).st_size > 0:
             valid = validate_input(os.path.abspath(file), ftype)
@@ -1736,12 +2100,19 @@ def mini_loop(user_args_lst, ftype):
     return 'Done'
 
 
-def Perform_prep(user_args):
+def perform_prep(user_args):
     """
     Full argument set
     :param user_args: trimmomatic arguments
     :return: all arguments to trim, map and centrifuge
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFPerform_prep %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
+
     start_time = time.time()
     stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
     tmpdirname = 'tmp_readprep_%s%s' % (user_args['out_name'], stamp)
@@ -1886,6 +2257,13 @@ def Perform_prep(user_args):
 
 
 def validate_output(res_output):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFvalidate_output %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
+
     stderr = res_output.stderr.decode('utf-8').rstrip('\n').split('\n')
     value = [True for e in stderr if e.lower().startswith('error')]
     if value:
@@ -1928,12 +2306,17 @@ def program_exists(name):
     return shutil.which(name) is not None
 
 
-def Perform_eukfinder(user_args):
+def perform_eukfinder(user_args):
     """
 
     :param user_args:
     :return:
     """
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFPerform_eukfinder %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
 
     # print(user_args)
     start_time = time.time()
@@ -1944,10 +2327,11 @@ def Perform_eukfinder(user_args):
                                                platform.python_version())
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     tax_up, reads_paths, redef_reads, redef_class, \
-    plast_path, map_id_path, acc2tax_path, ncpu, max_plast, \
-    e_value, pid, mode, base_outname, max_mem, cdb_path, aplast_path, \
-    amap_id_path, cov, mhlen, kmers = input_check_and_setup(user_args)
-    dirname = 'TempEukfinder'
+    plast_path, map_id_path, ncpu, max_plast, \
+    e_value, pid, mode, base_outname, max_mem, cdb_path,  \
+    cov, mhlen, kmers = input_check_and_setup(user_args)  #aplast_path, amap_id_path,
+
+    dirname = 'Eukfinder_Temps'
     mkdir(dirname)
     dirpath = os.path.abspath(dirname)
     os.chdir(dirpath)
@@ -2008,7 +2392,7 @@ def Perform_eukfinder(user_args):
                                                existing_dfs, e_value, pid,
                                                cov, False)
 
-        final_dfs = create_df_taxonomy(parsed_plouts, acc2tax_path,
+        final_dfs = create_df_taxonomy(parsed_plouts,
                                        existing_dfs, pid,
                                        map_id_path)
         # dirpath
@@ -2041,7 +2425,7 @@ def Perform_eukfinder(user_args):
                                                new_dfs, e_value, pid, cov,
                                                True)
 
-        fdf = create_df_taxonomy(parsed_plouts, acc2tax_path,
+        fdf = create_df_taxonomy(parsed_plouts,
                                  new_dfs, pid,
                                  map_id_path)
 
@@ -2062,18 +2446,22 @@ def Perform_eukfinder(user_args):
 
         # relocate result directories
         os.chdir('..')
-        dirs_2_move = ['Classified_reads', 'Classified_contigs']
+        #dirs_2_move = ['Classified_reads', 'Classified_contigs']
+        dirs_2_move = ['Eukfinder_results']
         bdir = os.getcwd()
         for d in dirs_2_move:
             mf = os.path.join(dir_path, d)
             shutil.move(mf, bdir)
 
         ms = '****  RESULTS ARE READY!  ****\n'
+        ms += "\nDirectory Eukfinder_Temps contains temporary files"
+        ms += " to produce to directories already mentioned\n"
+
         ms += "The 'Classified_reads' directory contains the read subsets "
         ms += "that were used to obtain an assembly.\nSuch assembly was "
         ms += "re-classified as bacteria, archaea, eukaryota, unknown and "
         ms +=  "Eukaryota-Unknown. These files are deposited in the directory "
-        ms += "\n'Classified_contigs'. Directory TempEukfinder contains "
+        ms += "\n'Eukfinder_results'. Directory Eukfinder_Temps contains "
         ms += "temporary files to produce to directories already mentioned\n"
         ms += "\n*****   WARNING !!! *****\n"
         ms += "Each of these classified files may contain MORE than ONE "
@@ -2087,7 +2475,7 @@ def Perform_eukfinder(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
 
-def Perform_long_seqs(user_args):
+def perform_long_seqs(user_args):
     #
     start_time = time.time()
     stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
@@ -2097,7 +2485,7 @@ def Perform_long_seqs(user_args):
                                                platform.python_version())
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     tax_up, reads_path, redef_reads, plast_path, \
-    map_id_path, acc2tax_path, n_cpu, max_plast, \
+    map_id_path, n_cpu, max_plast, \
     e_value, pid, base_outname, cov,  cdb_path, mhlen = input_check_and_setup(
         user_args)
     n_cpu = cpu_chunk(n_cpu, max_plast)
@@ -2140,7 +2528,7 @@ def Perform_long_seqs(user_args):
         parsed_plouts = plast_search_n_results(n_cpu, plast_path,
                                                existing_dfs, e_value, pid,
                                                cov, True)
-        fdf = create_df_taxonomy(parsed_plouts, acc2tax_path,
+        fdf = create_df_taxonomy(parsed_plouts,
                                  existing_dfs, pid, map_id_path)
 
         mycwd = os.getcwd()
@@ -2162,7 +2550,7 @@ def Perform_long_seqs(user_args):
         sys.exit(0)
     """
     ms = '****  RESULTS ARE READY!  ****\n'
-    ms += "The 'Classified_reads' directory contains the read classified "
+    ms += "The 'Eukfinder_results' directory contains the sequences classified "
     ms += "as bacteria, archaea, eukaryota, unknown and "
     ms += "Eukaryota-Unknown. Directory prefixed with 'tmp' contains "
     ms += "temporary intermediate files to classify the reads mentioned\n"
@@ -2179,7 +2567,101 @@ def Perform_long_seqs(user_args):
     return 'Done'
 
 
+# NOTE: It is perhaps worth while to verify checksum in the future
+def perform_download_db(user_args):
+    name = user_args['name']
+
+    if user_args['path'] == ".":
+        path = os.getcwd()
+    else:
+        path = user_args['path']
+
+    try:
+        os.mkdir(f"{path}/{name}")
+    except FileExistsError:
+        sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+
+    print(f"Created {path}/{name}\n")
+
+    try:
+        while True:
+            user_input = input(f"Would you like to download all databases ({_all_db[1]})? (yes/no)\n>")
+
+            if user_input == "yes":
+                print("\nDownloading...")
+                print("Please do not close tab, this may take a while...")
+                urllib.request.urlretrieve(_all_db[2], f"{path}/{name}/{_all_db[3]}")
+
+                print("\nDecompressing...")
+                file = tarfile.open(f"{path}/{name}/{_all_db[3]}")
+                file.extractall(f"{path}/{name}")
+                file.close()
+
+                print("\nDecompressing individual databases...")
+                for content in _database.values():
+                    file = tarfile.open(f"{path}/{name}/{content[3]}")
+                    file.extractall(f"{path}/{name}")
+                    file.close()
+                    os.remove(f"{path}/{name}/{content[3]}")
+
+                os.remove(f"{path}/{name}/{_all_db[3]}")
+                sys.exit(f"\nDatabases downloaded and decompressed in {path}/{name}, exiting...")
+            elif user_input == "no":
+                while True:
+                    print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                    print(f"1. {_database['1'][0]} - {_database['1'][1]}")
+                    print(f"2. {_database['2'][0]} - {_database['2'][1]}")
+                    print(f"3. {_database['3'][0]} - {_database['3'][1]}")
+                    print(f"4. {_database['4'][0]} - {_database['4'][1]}")
+                    print(f"5. {_database['5'][0]} - {_database['5'][1]}")
+                    user_input = input("\nOr type exit, if you would like to skip for now:\n>")
+
+                    if user_input == "exit":
+                        os.rmdir(f"{path}/{name}")
+                        print(f"\nDeleted {path}/{name}\n")
+                        sys.exit("No downloads, exiting...")
+
+                    selected = user_input.split(" ") if user_input.strip() else []
+
+                    if not selected:
+                        print("\nInvalid option. Enter indices separated by spaces.\n")
+                        continue
+
+                    print("\nDownloading...\n")
+
+                    for index in selected:
+                        if index in _database.keys():
+                            db_path = f"{path}/{name}/{index}_{_database[index][0]}"
+                            os.mkdir(db_path)
+
+                            print(f"Downloading {_database[index][0]}...")
+                            urllib.request.urlretrieve(_database[index][2],f"{db_path}/{_database[index][3]}")
+
+                            print(f"Decompressing {_database[index][0]}...")
+                            file = tarfile.open(f"{db_path}/{_database[index][3]}")
+                            file.extractall(db_path)
+                            file.close()
+
+                            os.remove(f"{db_path}/{_database[index][3]}")
+
+                            print(f"{_database[index][0]} downloaded and decompressed.\n")
+                        else:
+                            print(f"WARNING: Unrecognized index {index}, skipping...\n")
+
+                    break
+
+                sys.exit(f"Database(s) downloaded in {path}/{name}, exiting...")
+
+            print("\nInvalid option. Enter yes or no.\n")
+    except Exception as e:
+        exit(f"Error: {e}")
+
 def short_seqs(args):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFshort_seqs %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
     bname = args.o
     reads = args.r1, args.r2, args.ur1, args.ur2
     classification = args.pclass, args.uclass
@@ -2189,6 +2671,12 @@ def short_seqs(args):
 
 
 def read_prep(args):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFread_prep %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     bname = args.o
     reads = args.r1, args.r2
     host = args.hg
@@ -2200,14 +2688,29 @@ def read_prep(args):
 
 
 def long_seqs(args):
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFlong_seqs %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     bname = args.o
     reads = args.u
     paths = args.m, args.a, args.p
     params = args.n, args.t, args.e, args.z, args.mhlen
     return reads, paths, params, bname
 
+def download_db(args):
+    path = args.path
+    return path
 
 def parse_arguments():
+
+    custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
+    ms = 'run DEFparse_arguments %s\n' %custom_datetime
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+
     myargs = {
         '-n': ['--number-of-threads', str, 'Number of threads', True],
         '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
@@ -2217,13 +2720,6 @@ def parse_arguments():
         '-p': ['--plast-database', str, 'path to plast database', True],
         '-m': ['--plast-id-map', str, 'path to taxonomy map for '
                                       'plast database', True],
-        '-p2': ['--ancillary-plast-database', str, 'path to plast '
-                                                   'database'],
-        '-m2': ['--ancillary-plast-id-map', str, 'path to taxonomy map '
-                                                 'for plast database'],
-        '--force-pdb': ['--force_plast_database', str,
-                        'impose the declared plast_database'],
-        '-a': ['--acc2tax-database', str, 'path to acc2tax database', True],
         '--cdb': ['--centrifuge-database', str, 'path to centrifuge '
                                                 'database', True],
         '-e': ['--e-value', float, 'threshold for plast searches', True],
@@ -2258,7 +2754,7 @@ def parse_arguments():
     group1.add_argument('--un', '--un-pair-reads', type=str,
                         help='orphan reads', required=True)
     group1.add_argument('-o', '--out_name', type=str,
-                        help='out name', required=True)
+                        help='output file basename', required=True)
     for key in myargs:
         try:
             group1.add_argument(key, myargs[key][0],
@@ -2300,7 +2796,7 @@ def parse_arguments():
     group2.add_argument('--hg', '--host-genome', type=str,
                         help='host genome to get map out', required=True)
     group2.add_argument('-o', '--out_name', type=str,
-                        help='out name', required=True)
+                        help='output file basename', required=True)
     group2.add_argument('--cdb', '--centrifuge-database', type=str,
                         help='path to centrifuge database', required=True)
 
@@ -2311,7 +2807,7 @@ def parse_arguments():
     group3.add_argument('-l', '--long-seqs', type=str,
                         help='long sequences file', required=True)
     group3.add_argument('-o', '--out_name', type=str,
-                        help='out name', required=True)
+                        help='output file basename', required=True)
     group3.add_argument('--mhlen', '--min-hit-length', type=int,
                         help='minimum hit length', required=True)
     group3.add_argument('--cdb', '--centrifuge-database', type=str,
@@ -2327,13 +2823,18 @@ def parse_arguments():
         '-p': ['--plast-database', str, 'path to plast database', True],
         '-m': ['--plast-id-map', str, 'path to taxonomy map for '
                                       'plast database', True],
-        '-a': ['--acc2tax-database', str, 'path to acc2tax database', True],
         '-e': ['--e-value', float, 'threshold for plast searches', True],
         '--pid': ['--percent_id', float, 'percentage identity for '
                                          'plast searches', True],
         '--cov': ['--coverage', float, 'percentage coverage for '
                                        'plast searches', True],
     }
+
+    parser_download_db = subparsers.add_parser("download_db")
+    parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
+                                    help="directory name for storing the databases")
+    parser_download_db.add_argument("-p", "--path", type=str, default=".",
+                                    help="filesystem path for storing the databases")
 
     for key in myargs_lr:
         try:
@@ -2349,6 +2850,7 @@ def parse_arguments():
     parser_short_seqs.set_defaults(func=short_seqs)
     parser_read_prep.set_defaults(func=read_prep)
     parser_long_seqs.set_defaults(func=long_seqs)
+    parser_download_db.set_defaults(func=download_db)
 
     return parser.parse_args()
 
@@ -2363,11 +2865,13 @@ def main():
 
     dic_args = vars(args)
     if dic_args['func'].__name__ == 'read_prep':
-        Perform_prep(dic_args)
+        perform_prep(dic_args)
     elif dic_args['func'].__name__ == 'short_seqs':
-        Perform_eukfinder(dic_args)
+        perform_eukfinder(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
-        Perform_long_seqs(dic_args)
+        perform_long_seqs(dic_args)
+    elif dic_args["func"].__name__ == "download_db":
+        perform_download_db(dic_args)
 
 
 if __name__ == '__main__':
