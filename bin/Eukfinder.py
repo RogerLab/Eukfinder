@@ -24,14 +24,13 @@ __version__ = '1.2.3'
 
 # database info
 # NOTE: The test database is left out because the all db tarball does not include it at the moment
-_all_db = ["eukfinder databases", "74 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all.tar.gz", "eukfinder_dbs_all.tar.gz"]
+_all_db = ["eukfinder databases", "74 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all_v1.2.4.tar.gz", "eukfinder_dbs_all_v1.2.4.tar.gz"]
 
 _database = {
-    "1": ["acc2tax database placeholder", "0.76 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/acc2tax_db.tar.gz", "acc2tax_db.tar.gz"],
-    "2": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
-    "3": ["PLAST database", "3.6 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
-    "4": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
-    "5": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
+    "1": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
+    "2": ["PLAST database", "3.6 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
+    "3": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
+    "4": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"]
 }
 
 
