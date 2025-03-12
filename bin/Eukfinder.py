@@ -2305,7 +2305,7 @@ def program_exists(name):
     return shutil.which(name) is not None
 
 
-def perform_eukfinder(user_args):
+def perform_short_seqs(user_args):
     """
 
     :param user_args:
@@ -2320,7 +2320,7 @@ def perform_eukfinder(user_args):
     # print(user_args)
     start_time = time.time()
     stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
-    log = 'Class_%s.log' % stamp
+    log = 'Short_seqs_%s.log' % stamp
     sys.stdout = open(log, 'w')
     ms = 'Eukfinder v%s is using python %s' % (__version__,
                                                platform.python_version())
@@ -2869,7 +2869,7 @@ def main():
     if dic_args['func'].__name__ == 'read_prep':
         perform_prep(dic_args)
     elif dic_args['func'].__name__ == 'short_seqs':
-        perform_eukfinder(dic_args)
+        perform_short_seqs(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
         perform_long_seqs(dic_args)
     elif dic_args["func"].__name__ == "download_db":
