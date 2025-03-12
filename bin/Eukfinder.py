@@ -2330,7 +2330,7 @@ def perform_short_seqs(user_args):
     e_value, pid, mode, base_outname, max_mem, cdb_path,  \
     cov, mhlen, kmers = input_check_and_setup(user_args)  #aplast_path, amap_id_path,
 
-    dirname = 'Eukfinder_Temps'
+    dirname = 'Intermediate_data'
     mkdir(dirname)
     dirpath = os.path.abspath(dirname)
     os.chdir(dirpath)
@@ -2549,6 +2549,23 @@ def perform_long_seqs(user_args):
         print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
         sys.exit(0)
 
+    # Folder paths
+    old_folder = 'Classified_reads'
+    new_folder = 'Eukfinder_results'
+
+    # Check if the folder exists
+    if os.path.exists(old_folder) and os.path.isdir(old_folder):
+        # Rename the folder
+        shutil.move(old_folder, new_folder)
+        print(f"Folder '{old_folder}' renamed to '{new_folder}'.")
+    else:
+        print(f"No folder named '{old_folder}' found.")
+
+    # removing temporary files
+    files_to_delete = ["tmp.LR.fasta", "tmp.LR.fastq"]
+    for file in files_to_delete:
+        if os.path.exists(file):  # Check if the file exists
+            os.remove(file)       # Delete the file
     
     # removing temporary files
     """
