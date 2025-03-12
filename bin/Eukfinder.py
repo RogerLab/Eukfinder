@@ -49,7 +49,6 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
                                                           mlenght, qenc)
 
     ms = 'trimmomatic cmd_line:\n%s\n' % cmd
-    ms += 'run trimmomatic at %s\n' %custom_datetime
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
 
     _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
@@ -1502,9 +1501,6 @@ def create_df_taxonomy(plast_outputs_list, working_dfs,
     :return:
     """
 
-    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
-
-
     cladfs = []
     for entry in plast_outputs_list:
         etk, plast_output = entry
@@ -2540,7 +2536,7 @@ def read_prep_env(args):
     adapters = args.i
     params = args.hcrop, args.l, args.t, args.wsize, \
         args.qscore, args.mlen, args.mhlen, args.qenc
-    return bname, reads, threads, adapters, params, host
+    return bname, reads, threads, adapters, params
 
 def long_seqs(args):
 
