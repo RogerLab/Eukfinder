@@ -2537,6 +2537,19 @@ def perform_long_seqs(user_args):
         _ = writinggroups(fdf, dir_path, base_outname)
         os.chdir('..')
 
+    # relocate temporary directories
+    Interdata_dirname = 'Intermediate_data'
+    mkdir(Interdata_dirname)
+    Interdata_dir_path = os.path.abspath(Interdata_dirname)
+    try:
+        shutil.move(dirname_path, Interdata_dir_path)
+    except:
+        ms = 'Something went wrong when trying to remove:\n'
+        ms += '%s\nTerminating program' % dirname_path
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        sys.exit(0)
+
+    
     # removing temporary files
     """
     try:
