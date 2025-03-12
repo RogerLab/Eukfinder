@@ -2254,6 +2254,134 @@ def perform_prep(user_args):
         print(ms, flush=True)
     return my_preps
 
+def perform_prep_env(user_args):
+    """
+    Full argument set
+    :param user_args: trimmomatic arguments
+    :return: all arguments to trim, map and centrifuge
+    """
+
+    start_time = time.time()
+    stamp = time.strftime('%Y%m%d', time.gmtime(start_time))
+    tmpdirname = 'tmp_readprep_%s%s' % (user_args['out_name'], stamp)
+    log = os.path.abspath('Read_prep_%s.log' % stamp)
+    sys.stdout = open(log, 'w')
+
+    # Trimming raw reads
+    ms = 'Run has started with arguments:\n'
+    for key in user_args:
+        ms += '%s: %s, ' % (key, user_args[key])
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+
+    cen = glob.glob('%s*' % user_args['cdb'])
+    if len(cen) != 4:
+        ms = '\nThere is something wrong with the centrifuge database '
+        ms += 'declared. \nMake sure that the '
+        ms += 'path declared specifies the shared suffix of '
+        ms += 'the database files (see user manual)\n. Terminating program'
+        print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+        sys.exit(0)
+    plastdb_home = glob.glob('%s*' % user_args['cdb'])
+
+    # fast check for file format
+    _ = mini_loop([user_args['r1'], user_args['r2']], 'fastq')
+    _ = mini_loop([user_args['illumina_clip']], 'fasta')
+
+    # declare file existence
+    # abspaths
+    adapters = os.path.abspath(user_args['illumina_clip'])
+    oR1 = os.path.abspath(user_args['r1'])
+    oR2 = os.path.abspath(user_args['r2'])
+
+    #
+    mss = 'Eukfinder v%s is using python %s\n' % (__version__,
+                                                 platform.python_version())
+    mss += 'Preparing reads for analysis...'
+
+    print(mss, sep=' ', end='\n', file=sys.stdout, flush=True)
+    mkdir(tmpdirname)
+    tmpdirname_path = os.path.abspath(tmpdirname)
+    os.chdir(tmpdirname_path)
+
+    readfile_list = [(oR1, 'R1'), (oR2, 'R2')]
+    xR1, xR2 = Parallel(n_jobs=-2)(delayed(rename_reads)(readfile)
+                            for readfile in readfile_list)
+    nR1, m1 = xR1
+    nR2, m2 = xR2
+    ms += m1 + m2
+    ms += '\nReads have been renamed\n'
+
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    R1, R2, uR1R2 = trimming(user_args['out_name'], nR1, nR2, adapters,
+                             user_args['wsize'], user_args['qscore'],
+                             user_args['hcrop'], user_args['mlen'],
+                             user_args['threads'], user_args['leading_trim'],
+                             user_args['trail_trim'],user_args['qenc'])
+
+    # validate trimmomatic output
+    _ = mini_loop([R1, R2, uR1R2], 'fastq')
+
+    # centrifuge classification of reads
+    ccmd_pline, p_report = centrifuge(user_args['out_name'], 
+                                      (R1, R2),
+                                      user_args['threads'],
+                                      user_args['mhlen'],
+                                      user_args['cdb'], 1, pair=True,
+                                      fastq=True)
+
+    pcent_out = run(ccmd_pline, stdout=PIPE, stderr=PIPE, shell=True)
+    valid, ms = validate_output(pcent_out)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
+    ccmd_upline, up_report = centrifuge(user_args['out_name'], uR1R2,
+                                        user_args['threads'],
+                                        user_args['mhlen'],
+                                        user_args['cdb'], 1, pair=False,
+                                        fastq=True)
+    ucent_out = run(ccmd_upline, stdout=PIPE, stderr=PIPE, shell=True)
+    valid, ms = validate_output(ucent_out)
+    print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+    if not valid:
+        sys.exit(1)
+
+    # ---- Deleting temporary files ----
+    os.chdir('..')
+    my_preps = (R1, R2, uR1R2, p_report, up_report)
+    new_abspaths = []
+    ms = 'Something went wrong.\n'
+    skip = []
+    for f in my_preps:
+        try:
+            myf = os.path.split(f)[1]
+            print(f'Moving {f} to {os.getcwd()}', end='\n', file=sys.stdout,
+                  flush=True)
+            nflocation = os.path.join(os.getcwd(), myf)
+            if os.path.isfile(nflocation):
+                m = f'WARNING:\nFile {myf} already exists in {os.getcwd()} '
+                m += 'and will not be overwritten.\nNewly processed file will '
+                m += 'remain in the tmp directory'
+                print(m, sep=' ', end='\n', file=sys.stdout, flush=True)
+                skip.append(f)
+            else:
+                shutil.move(f, os.getcwd())
+                new_abspaths.append(nflocation)
+        except:
+            ms += f'ERROR: attempt to move {f} to {os.getcwd()} failed\n'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            sys.exit(1)
+    if not skip:
+        try:
+            os.system('rm -r %s' % tmpdirname_path)
+        except:
+            ms += '%s does not seem to exist\n'
+            ms += 'Terminating program.'
+            print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
+            sys.exit(1)
+        ms = "Files are ready to use with 'short_seqs' mode:\n%s" % '\n'.join(
+            new_abspaths)
+        print(ms, flush=True)
+    return my_preps
 
 def validate_output(res_output):
 
@@ -2862,6 +2990,40 @@ def parse_arguments():
                                        'plast searches', True],
     }
 
+    #  ---  second level parser for read_prep_env ---  #
+    parser_read_prep_env = subparsers.add_parser('read_prep_env')
+    group4 = parser_read_prep_env.add_argument_group('Required arguments',
+                                                 'Description')
+    group4.add_argument('--r1', '--reads-r1', type=str,
+                        help='left reads', required=True)
+    group4.add_argument('--r2', '--reads-r2', type=str,
+                        help='right reads', required=True)
+    group4.add_argument('-n', '--threads', type=int,
+                        help='number of threads', required=True)
+    group4.add_argument('-i', '--illumina-clip', type=str,
+                        help='adaptor file', required=True)
+    group4.add_argument('--hcrop', '--head-crop', type=int,
+                        help='head trim', required=True)
+    group4.add_argument('-l', '--leading-trim', type=int,
+                        help='leading trim', required=True)
+    group4.add_argument('-t', '--trail-trim', type=int,
+                        help='trail trim', required=True)
+    group4.add_argument('--wsize', '--window-size', type=int,
+                        help='sliding window size', required=True)
+    group4.add_argument('--qscore', '--quality-score', type=int,
+                        help='quality score for trimming', required=True)
+    group4.add_argument('--mlen', '--min-length', type=int,
+                        help='minimum length', required=True)
+    group4.add_argument('--mhlen', '--min-hit-length', type=int,
+                        help='minimum hit length', required=True)
+    group4.add_argument('-o', '--out_name', type=str,
+                        help='output file basename', required=True)
+    group4.add_argument('--cdb', '--centrifuge-database', type=str,
+                        help='path to centrifuge database', required=True)
+    group4.add_argument('--qenc', '--quality-encoding', type=str,
+                        help='quality enconding for trimmomatic', default='phred64', required=False)
+
+   
     parser_download_db = subparsers.add_parser("download_db")
     parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
                                     help="directory name for storing the databases")
@@ -2880,8 +3042,9 @@ def parse_arguments():
                                           help=myargs_lr[key][2])
 
     parser_short_seqs.set_defaults(func=short_seqs)
-    parser_read_prep.set_defaults(func=read_prep)
     parser_long_seqs.set_defaults(func=long_seqs)
+    parser_read_prep.set_defaults(func=read_prep)
+    parser_read_prep_env.set_defaults(func=read_prep_env)
     parser_download_db.set_defaults(func=download_db)
 
     return parser.parse_args()
@@ -2902,6 +3065,8 @@ def main():
         perform_short_seqs(dic_args)
     elif dic_args['func'].__name__ == 'long_seqs':
         perform_long_seqs(dic_args)
+    elif dic_args['func'].__name__ == 'read_prep_env':
+        perform_prep_env(dic_args)
     elif dic_args["func"].__name__ == "download_db":
         perform_download_db(dic_args)
 
