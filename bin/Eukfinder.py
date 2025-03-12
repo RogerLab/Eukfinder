@@ -2580,6 +2580,7 @@ def perform_short_seqs(user_args):
             mf = os.path.join(dir_path, d)
             shutil.move(mf, bdir)
 
+        summary_table()        
         ms = '****  RESULTS ARE READY!  ****\n'
         ms += "\nDirectory Eukfinder_Temps contains temporary files"
         ms += " to produce to directories already mentioned\n"
@@ -2694,7 +2695,8 @@ def perform_long_seqs(user_args):
     for file in files_to_delete:
         if os.path.exists(file):  # Check if the file exists
             os.remove(file)       # Delete the file
-    
+
+    summary_table()    
     # removing temporary files
     """
     try:
