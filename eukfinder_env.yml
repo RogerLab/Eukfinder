@@ -7,7 +7,6 @@ channels:
 
 dependencies:
   - python
-  - ete3
   - numpy
   - pandas
   - joblib
@@ -17,3 +16,7 @@ dependencies:
   - trimmomatic
   - centrifuge
   - bowtie2
+  - pip
+
+  - pip:
+      - ete3==3.1.3
