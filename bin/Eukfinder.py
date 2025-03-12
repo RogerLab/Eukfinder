@@ -36,7 +36,7 @@ _database = {
 
 # --- preparation ---
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
-             mlenght, threads, leading_trim, trail_trim):
+             mlenght, threads, leading_trim, trail_trim, qenc):
 
     custom_datetime = time.strftime("%d/%m/%Y - %H:%M:%S", time.localtime())
     ms = 'run DEFtrimming @ %s\n' %custom_datetime
@@ -48,9 +48,9 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
     cmd = 'trimmomatic PE -threads %s -trimlog %s.trim.log ' % (threads, bn)
     cmd += '%s %s %s %s ILLUMINACLIP:%s:2:30:10 HEADCROP:%s LEADING:%s ' % (
         reads1, reads2, r1_out, r2_out, adapath, headcrop, leading_trim)
-    cmd += 'TRAILING:%s SLIDINGWINDOW:%s:%s MINLEN:%s' % (trail_trim,
+    cmd += 'TRAILING:%s SLIDINGWINDOW:%s:%s MINLEN:%s -%s' % (trail_trim,
                                                           wsize, qscore,
-                                                          mlenght)
+                                                          mlenght, qenc)
 
     ms = 'trimmomatic cmd_line:\n%s\n' % cmd
     ms += 'run trimmomatic at %s\n' %custom_datetime
@@ -2169,7 +2169,7 @@ def perform_prep(user_args):
                              user_args['wsize'], user_args['qscore'],
                              user_args['hcrop'], user_args['mlen'],
                              user_args['threads'], user_args['leading_trim'],
-                             user_args['trail_trim'])
+                             user_args['trail_trim'],user_args['qenc'])
     #
     # Mapping host out
     ms = 'Getting rid of host reads...'
@@ -2682,7 +2682,7 @@ def read_prep(args):
     threads = args.n
     adapters = args.i
     params = args.hcrop, args.l, args.t, args.wsize, \
-        args.qscore, args.mlen, args.mhlen
+        args.qscore, args.mlen, args.mhlen, args.qenc
     return bname, reads, threads, adapters, params, host
 
 
@@ -2798,6 +2798,9 @@ def parse_arguments():
                         help='output file basename', required=True)
     group2.add_argument('--cdb', '--centrifuge-database', type=str,
                         help='path to centrifuge database', required=True)
+    group2.add_argument('--qenc', '--quality-encoding', type=str,
+                        help='quality enconding for trimmomatic', default='phred64', required=False)
+
 
     # --- second level parser for long read mode ---
     parser_long_seqs = subparsers.add_parser('long_seqs')
