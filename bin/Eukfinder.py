@@ -2845,6 +2845,15 @@ def read_prep(args):
         args.qscore, args.mlen, args.mhlen, args.qenc
     return bname, reads, threads, adapters, params, host
 
+def read_prep_env(args):
+
+    bname = args.o
+    reads = args.r1, args.r2
+    threads = args.n
+    adapters = args.i
+    params = args.hcrop, args.l, args.t, args.wsize, \
+        args.qscore, args.mlen, args.mhlen, args.qenc
+    return bname, reads, threads, adapters, params, host
 
 def long_seqs(args):
 
