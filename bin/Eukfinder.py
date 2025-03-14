@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import tarfile
+from pathlib import Path
+
 import ete3
 import glob
 import time
@@ -2820,10 +2822,7 @@ def main():
     # json creation
     if not os.path.exists(_json_path):
         os.makedirs("~/.eukfinder", exist_ok=True)
-
-        with open(_json_path, "w"):
-            pass
-
+        Path(_json_path).touch()
         update_json(
             {
                 "Centrifuge": "",
