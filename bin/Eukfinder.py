@@ -2550,6 +2550,60 @@ def download_db(args):
     path = args.path
     return path
 
+def summary_table():
+    # Change directory to 'Eukfinder_results'
+    try:
+        os.chdir("Eukfinder_results")
+        #print("Changed directory to 'Eukfinder_results'")
+    except FileNotFoundError:
+        print("Error: 'Eukfinder_results' directory not found. Exiting...")
+        sys.exit(1)
+
+    # Generate tables from FASTA/FASTQ files
+    for f in glob.glob("*.f*"):
+        basename = os.path.splitext(f)[0]  # Improved filename handling
+        output = f"{basename}.table"
+
+        cmd = f"seqkit fx2tab --length --name --header-line {f} -o {output}"
+        _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+
+    # Dictionary to store results
+    summary = {
+        "Group": [],
+        "#Seq": [],
+        "Total size(bp)": []
+    }
+
+    # Process table files and collect data
+    for file in glob.glob("*.table"):
+        if file.endswith(".un.table"):
+            group = file.split(".")[-3]
+        else:
+            group = file.split(".")[-2]
+
+        # Read data, skip header
+        try:
+            data = pd.read_csv(file, sep='\t', header=0)
+        except pd.errors.EmptyDataError:
+            print(f"Warning: {file} is empty or malformed. Skipping...")
+            continue
+
+        # Append results
+        summary["Group"].append(group)
+        summary["#Seq"].append(len(data))
+        summary["Total size(bp)"].append(data['length'].sum())
+
+        # Delete temporary `.table` files
+        os.remove(file)
+        #print(f"Deleted temporary file: {file}")
+
+    # Create and save summary table
+    summary_df = pd.DataFrame(summary)
+    output_file = "summary_table.txt"
+    summary_df.to_csv(output_file, sep='\t', index=False)
+
+    print(f"Summary table has been created: Eukfinder_results/{output_file}")
+
 def parse_arguments():
 
     myargs = {
@@ -2732,61 +2786,6 @@ def parse_arguments():
     parser_download_db.set_defaults(func=download_db)
 
     return parser.parse_args()
-
-def summary_table():
-    # Change directory to 'Eukfinder_results'
-    try:
-        os.chdir("Eukfinder_results")
-        #print("Changed directory to 'Eukfinder_results'")
-    except FileNotFoundError:
-        print("Error: 'Eukfinder_results' directory not found. Exiting...")
-        sys.exit(1)
-
-    # Generate tables from FASTA/FASTQ files
-    for f in glob.glob("*.f*"):
-        basename = os.path.splitext(f)[0]  # Improved filename handling
-        output = f"{basename}.table"
-
-        cmd = f"seqkit fx2tab --length --name --header-line {f} -o {output}"
-        _ = run(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-
-    # Dictionary to store results
-    summary = {
-        "Group": [],
-        "#Seq": [],
-        "Total size(bp)": []
-    }
-
-    # Process table files and collect data
-    for file in glob.glob("*.table"):
-        if file.endswith(".un.table"):
-            group = file.split(".")[-3]
-        else:
-            group = file.split(".")[-2]
-
-        # Read data, skip header
-        try:
-            data = pd.read_csv(file, sep='\t', header=0)
-        except pd.errors.EmptyDataError:
-            print(f"Warning: {file} is empty or malformed. Skipping...")
-            continue
-
-        # Append results
-        summary["Group"].append(group)
-        summary["#Seq"].append(len(data))
-        summary["Total size(bp)"].append(data['length'].sum())
-
-        # Delete temporary `.table` files
-        os.remove(file)
-        #print(f"Deleted temporary file: {file}")
-
-    # Create and save summary table
-    summary_df = pd.DataFrame(summary)
-    output_file = "summary_table.txt"
-    summary_df.to_csv(output_file, sep='\t', index=False)
-
-    print(f"Summary table has been created: Eukfinder_results/{output_file}")
-
 
 def main():
     args = parse_arguments()
