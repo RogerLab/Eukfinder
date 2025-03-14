@@ -2821,8 +2821,7 @@ def parse_arguments(json_data):
 def main():
     # json creation
     if not os.path.exists(_json_path):
-        os.makedirs("~/.eukfinder", exist_ok=True)
-        Path(_json_path).touch()
+        os.makedirs(os.path.dirname(_json_path), exist_ok=True)
         update_json(
             {
                 "Centrifuge": "",
