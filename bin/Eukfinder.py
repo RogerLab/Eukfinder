@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import json
 import os
 import re
 import sys
@@ -19,7 +20,7 @@ import urllib.request
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.2.5'
+__version__ = '1.2.4'
 #   End Info   #
 
 # database info
@@ -34,6 +35,8 @@ _database = {
     "5": ["Eukfinder Env Dbs", "72 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/eukfinder_dbs_env_v1.2.5.tar.gz", "eukfinder_dbs_env_v1.2.5.tar.gz"]
 }
 
+# JSON
+_json_path = f"{os.path.expanduser('~')}/.eukfinder/config.json"
 
 # --- preparation ---
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
@@ -2417,8 +2420,7 @@ def perform_long_seqs(user_args):
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return 'Done'
 
-
-# NOTE: It is perhaps worth while to verify checksum in the future
+# NOTE: It is perhaps worthwhile to verify checksum in the future
 def perform_download_db(user_args):
     name = user_args['name']
 
@@ -2460,6 +2462,7 @@ def perform_download_db(user_args):
             elif user_input == "no":
                 while True:
                     print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                    # TODO: this shouldn't be hardcoded
                     print(f"1. {_database['1'][0]} - {_database['1'][1]}")
                     print(f"2. {_database['2'][0]} - {_database['2'][1]}")
                     print(f"3. {_database['3'][0]} - {_database['3'][1]}")
@@ -2604,35 +2607,47 @@ def summary_table():
 
     print(f"Summary table has been created: Eukfinder_results/{output_file}")
 
-def parse_arguments():
+# TODO: update_json()
+
+def read_json():
+
+    try:
+        with open(_json_path, "r") as json_file:
+            json_data = json.load(json_file)
+    except FileNotFoundError: # TODO: should create this if not found
+        exit(f"config.json cannot be found at {_json_path}. \nExiting...")
+
+    return json_data
+
+def parse_arguments(json_data):
 
     myargs = {
-        '-n': ['--number-of-threads', str, 'Number of threads', True],
-        '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
-                                          'file', True],
-        '-t': ['--taxonomy-update', str, 'Set to True the first '
-               'time the program is used. Otherwise set to False', True],
-        '-p': ['--plast-database', str, 'path to plast database', True],
-        '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-                                      'plast database', True],
-        '--cdb': ['--centrifuge-database', str, 'path to centrifuge '
-                                                'database', True],
-        '-e': ['--e-value', float, 'threshold for plast searches', True],
-        '--pid': ['--percent_id', float, 'percentage identity for '
-                                         'plast searches', True],
-        '--cov': ['--coverage', float, 'percentage coverage for '
-                                       'plast searches', True],
-        '--max_m': ['--max_memory', str, 'Maximum memory allocated to '
-                                         'carry out an assembly', True],
-        '-k': ['--kmers', str, 'kmers to use during assembly. '
+        '-n': ['--number-of-threads', str, '20', 'Number of threads', False],
+        '-z': ['--number-of-chunks', str, '2', 'Number of chunks to split a '
+                                          'file', False],
+        '-t': ['--taxonomy-update', str, 'False', 'Set to True the first '
+               'time the program is used. Otherwise set to False', False],
+        '-p': ['--plast-database', str, json_data["plast_db"], 'path to plast database', False],
+        '-m': ['--plast-id-map', str, json_data["plast_map"], 'path to taxonomy map for '
+                                      'plast database', False],
+        '--cdb': ['--centrifuge-database', str, json_data["centrifuge_db"], 'path to centrifuge '
+                                                'database', False],
+        '-e': ['--e-value', float, 0.01, 'threshold for plast searches', False],
+        '--pid': ['--percent_id', float, 60, 'percentage identity for '
+                                         'plast searches', False],
+        '--cov': ['--coverage', float, 10, 'percentage coverage for '
+                                       'plast searches', False],
+        '--max_m': ['--max_memory', str, "300", 'Maximum memory allocated to '
+                                         'carry out an assembly', False],
+        '-k': ['--kmers', str, "21, 33, 55", 'kmers to use during assembly. '
                'These must be odd and less than 128. default is 21,33,55',
                False],
-        '--mhlen': ['--min-hit-length', int, 'Maximum memory allocated to '
-                                             'carry out an assembly', True],
-        '--pclass': ['--p-reads-class', str, 'Classification for '
-                                             'pair end reads', True],
-        '--uclass': ['--u-reads-class', str, 'Classification for '
-                                             'un-pair end reads', True]
+        '--mhlen': ['--min-hit-length', int, 25, 'Maximum memory allocated to '
+                                             'carry out an assembly', False],
+        '--pclass': ['--p-reads-class', str, None, 'Classification for '
+                                             'pair end reads', False],
+        '--uclass': ['--u-reads-class', str, None, 'Classification for '
+                                             'un-pair end reads', False]
     }
 
     parser = argparse.ArgumentParser(prog='eukfinder')
@@ -2654,12 +2669,14 @@ def parse_arguments():
         try:
             group1.add_argument(key, myargs[key][0],
                                 type=myargs[key][1],
-                                help=myargs[key][2],
-                                required=myargs[key][3])
+                                default=myargs[key][2],
+                                help=myargs[key][3],
+                                required=myargs[key][4])
         except:
             parser_short_seqs.add_argument(key, myargs[key][0],
                                            type=myargs[key][1],
-                                           help=myargs[key][2])
+                                           default=myargs[key][2],
+                                           help=myargs[key][3])
 
     #  ---  second level parser for unpair mode ---  #
     #  ---  second level parser for read_prep ---  #
@@ -2693,7 +2710,8 @@ def parse_arguments():
     group2.add_argument('-o', '--out_name', type=str,
                         help='output file basename', required=True)
     group2.add_argument('--cdb', '--centrifuge-database', type=str,
-                        help='path to centrifuge database', required=True)
+                        default= json_data["centrifuge_db"],
+                        help='path to centrifuge database', required=False)
     group2.add_argument('--qenc', '--quality-encoding', type=str,
                         help='quality enconding for trimmomatic', default='phred64', required=False)
 
@@ -2709,23 +2727,24 @@ def parse_arguments():
     group3.add_argument('--mhlen', '--min-hit-length', type=int,
                         help='minimum hit length', required=True)
     group3.add_argument('--cdb', '--centrifuge-database', type=str,
-                        help='path to centrifuge database', required=True)
+                        default= json_data["centrifuge_db"],
+                        help='path to centrifuge database', required=False)
 
     myargs_lr = {
-        '-n': ['--number-of-threads', str, 'Number of threads', True],
-        '-z': ['--number-of-chunks', str, 'Number of chunks to split a'
-                                          ' file', True],
-        '-t': ['--taxonomy-update', str, 'Set to True the first '
+        '-n': ['--number-of-threads', str, '20', 'Number of threads', False],
+        '-z': ['--number-of-chunks', str, '2', 'Number of chunks to split a'
+                                          ' file', False],
+        '-t': ['--taxonomy-update', str, 'False', 'Set to True the first '
                                          'time the program is used. '
-                                         'Otherwise set to False', True],
-        '-p': ['--plast-database', str, 'path to plast database', True],
-        '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-                                      'plast database', True],
-        '-e': ['--e-value', float, 'threshold for plast searches', True],
-        '--pid': ['--percent_id', float, 'percentage identity for '
-                                         'plast searches', True],
-        '--cov': ['--coverage', float, 'percentage coverage for '
-                                       'plast searches', True],
+                                         'Otherwise set to False', False],
+        '-p': ['--plast-database', str, json_data["plast_db"], 'path to plast database', False],
+        '-m': ['--plast-id-map', str, json_data["plast_map"], 'path to taxonomy map for '
+                                      'plast database', False],
+        '-e': ['--e-value', float, 0.01, 'threshold for plast searches', False],
+        '--pid': ['--percent_id', float, 60, 'percentage identity for '
+                                         'plast searches', False],
+        '--cov': ['--coverage', float, 10, 'percentage coverage for '
+                                       'plast searches', False],
     }
 
     #  ---  second level parser for read_prep_env ---  #
@@ -2772,12 +2791,14 @@ def parse_arguments():
         try:
             group3.add_argument(key, myargs_lr[key][0],
                                 type=myargs_lr[key][1],
-                                help=myargs_lr[key][2],
-                                required=myargs_lr[key][3])
+                                default=myargs[key][2],
+                                help=myargs_lr[key][3],
+                                required=myargs_lr[key][4])
         except:
             parser_long_seqs.add_argument(key, myargs_lr[key][0],
                                           type=myargs_lr[key][1],
-                                          help=myargs_lr[key][2])
+                                          default=myargs[key][2],
+                                          help=myargs_lr[key][3])
 
     parser_short_seqs.set_defaults(func=short_seqs)
     parser_long_seqs.set_defaults(func=long_seqs)
@@ -2788,7 +2809,8 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
-    args = parse_arguments()
+    json_data = read_json()
+    args = parse_arguments(json_data)
 
     if len(sys.argv) == 1:
         print('Try Eukfinder.py -h for more information', sep=' ',
