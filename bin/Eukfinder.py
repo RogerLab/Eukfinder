@@ -53,7 +53,12 @@ def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
     cmd = 'trimmomatic PE -threads %s -trimlog %s.trim.log ' % (threads, bn)
     cmd += '%s %s %s %s ILLUMINACLIP:%s:2:30:10 HEADCROP:%s LEADING:%s ' % (
         reads1, reads2, r1_out, r2_out, adapath, headcrop, leading_trim)
-    cmd += 'TRAILING:%s SLIDINGWINDOW:%s:%s MINLEN:%s -%s' % (trail_trim,
+    if qenc == 'auto':
+        cmd += 'TRAILING:%s SLIDINGWINDOW:%s:%s MINLEN:%s ' % (trail_trim,
+                                                          wsize, qscore,
+                                                          mlenght)
+    else:
+        cmd += 'TRAILING:%s SLIDINGWINDOW:%s:%s MINLEN:%s -%s' % (trail_trim,
                                                           wsize, qscore,
                                                           mlenght, qenc)
 
@@ -2723,7 +2728,7 @@ def parse_arguments(json_data):
                         default= json_data["centrifuge_db"],
                         help='path to centrifuge database', required=False)
     group2.add_argument('--qenc', '--quality-encoding', type=str,
-                        help='quality enconding for trimmomatic', default='phred64', required=False)
+                        help='quality encoding for trimmomatic', default='auto', required=False)
 
 
     # --- second level parser for long read mode ---
@@ -2788,7 +2793,7 @@ def parse_arguments(json_data):
     group4.add_argument('--cdb', '--centrifuge-database', type=str,
                         help='path to centrifuge database', required=True)
     group4.add_argument('--qenc', '--quality-encoding', type=str,
-                        help='quality enconding for trimmomatic', default='phred64', required=False)
+                        help='quality encoding for trimmomatic', default='auto', required=False)
 
    
     parser_download_db = subparsers.add_parser("download_db")
