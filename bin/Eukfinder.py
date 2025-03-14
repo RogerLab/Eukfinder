@@ -1,8 +1,11 @@
 #!/usr/bin/env python
+import json
 import os
 import re
 import sys
 import tarfile
+from pathlib import Path
+
 import ete3
 import glob
 import time
@@ -19,7 +22,7 @@ import urllib.request
 #   Info  #
 __author__ = 'Dayana E. Salas-Leiva'
 __email__ = 'ds2000@cam.ac.uk'
-__version__ = '1.2.5'
+__version__ = '1.2.4'
 #   End Info   #
 
 # database info
@@ -34,6 +37,12 @@ _database = {
     "5": ["Eukfinder Env Dbs", "72 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/eukfinder_dbs_env_v1.2.5.tar.gz", "eukfinder_dbs_env_v1.2.5.tar.gz"]
 }
 
+_cdb = "Centrifuge_DB/Centrifuge_NewDB_Sept2020"
+_pdb = "PLAST_DB/PlastDB_Jun2020.fasta"
+_pmap = "PLAST_DB/PlastDB_Jun2020_map.txt"
+
+# JSON
+_json_path = f"{os.path.expanduser('~')}/.eukfinder/config.json"
 
 # --- preparation ---
 def trimming(bn, reads1, reads2, adapath, wsize, qscore, headcrop,
@@ -2417,20 +2426,15 @@ def perform_long_seqs(user_args):
     print(ms, sep=' ', end='\n', file=sys.stdout, flush=True)
     return 'Done'
 
-
-# NOTE: It is perhaps worth while to verify checksum in the future
+# NOTE: It is perhaps worthwhile to verify checksum in the future
 def perform_download_db(user_args):
+    path = user_args['path']
     name = user_args['name']
-
-    if user_args['path'] == ".":
-        path = os.getcwd()
-    else:
-        path = user_args['path']
 
     try:
         os.mkdir(f"{path}/{name}")
-    except FileExistsError:
-        sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+    except FileNotFoundError: # TODO: should create directory instead
+        sys.exit(f"{path} does not exist,check file integrity!\nExiting...")
 
     print(f"Created {path}/{name}\n")
 
@@ -2455,11 +2459,20 @@ def perform_download_db(user_args):
                     file.close()
                     os.remove(f"{path}/{name}/{content[3]}")
 
+                print("\nUpdating default database paths in json file...")
+                new_json_data = {
+                    "centrifuge_db": f"{path}/{name}/{_cdb}",
+                    "plast_db": f"{path}/{name}/{_pdb}",
+                    "plast_map": f"{path}/{name}/{_pmap}"
+                }
+                update_json(new_json_data)
+
                 os.remove(f"{path}/{name}/{_all_db[3]}")
                 sys.exit(f"\nDatabases downloaded and decompressed in {path}/{name}, exiting...")
             elif user_input == "no":
                 while True:
                     print("\nPlease select database(s) which you would like to install, separated by spaces (e.g., 1 2).\n")
+                    # TODO: this shouldn't be hardcoded
                     print(f"1. {_database['1'][0]} - {_database['1'][1]}")
                     print(f"2. {_database['2'][0]} - {_database['2'][1]}")
                     print(f"3. {_database['3'][0]} - {_database['3'][1]}")
@@ -2550,189 +2563,6 @@ def download_db(args):
     path = args.path
     return path
 
-def parse_arguments():
-
-    myargs = {
-        '-n': ['--number-of-threads', str, 'Number of threads', True],
-        '-z': ['--number-of-chunks', str, 'Number of chunks to split a '
-                                          'file', True],
-        '-t': ['--taxonomy-update', str, 'Set to True the first '
-               'time the program is used. Otherwise set to False', True],
-        '-p': ['--plast-database', str, 'path to plast database', True],
-        '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-                                      'plast database', True],
-        '--cdb': ['--centrifuge-database', str, 'path to centrifuge '
-                                                'database', True],
-        '-e': ['--e-value', float, 'threshold for plast searches', True],
-        '--pid': ['--percent_id', float, 'percentage identity for '
-                                         'plast searches', True],
-        '--cov': ['--coverage', float, 'percentage coverage for '
-                                       'plast searches', True],
-        '--max_m': ['--max_memory', str, 'Maximum memory allocated to '
-                                         'carry out an assembly', True],
-        '-k': ['--kmers', str, 'kmers to use during assembly. '
-               'These must be odd and less than 128. default is 21,33,55',
-               False],
-        '--mhlen': ['--min-hit-length', int, 'Maximum memory allocated to '
-                                             'carry out an assembly', True],
-        '--pclass': ['--p-reads-class', str, 'Classification for '
-                                             'pair end reads', True],
-        '--uclass': ['--u-reads-class', str, 'Classification for '
-                                             'un-pair end reads', True]
-    }
-
-    parser = argparse.ArgumentParser(prog='eukfinder')
-    subparsers = parser.add_subparsers()
-
-    #  ---  second level parser for pair mode ---  #
-    parser_short_seqs = subparsers.add_parser('short_seqs')
-    group1 = parser_short_seqs.add_argument_group('Required arguments',
-                                                  'Description')
-    group1.add_argument('--r1', '--reads-r1', type=str,
-                        help='left reads', required=True)
-    group1.add_argument('--r2', '--reads-r2', type=str,
-                        help='right reads', required=True)
-    group1.add_argument('--un', '--un-pair-reads', type=str,
-                        help='orphan reads', required=True)
-    group1.add_argument('-o', '--out_name', type=str,
-                        help='output file basename', required=True)
-    for key in myargs:
-        try:
-            group1.add_argument(key, myargs[key][0],
-                                type=myargs[key][1],
-                                help=myargs[key][2],
-                                required=myargs[key][3])
-        except:
-            parser_short_seqs.add_argument(key, myargs[key][0],
-                                           type=myargs[key][1],
-                                           help=myargs[key][2])
-
-    #  ---  second level parser for unpair mode ---  #
-    #  ---  second level parser for read_prep ---  #
-    parser_read_prep = subparsers.add_parser('read_prep')
-    group2 = parser_read_prep.add_argument_group('Required arguments',
-                                                 'Description')
-    group2.add_argument('--r1', '--reads-r1', type=str,
-                        help='left reads', required=True)
-    group2.add_argument('--r2', '--reads-r2', type=str,
-                        help='right reads', required=True)
-    group2.add_argument('-n', '--threads', type=int,
-                        help='number of threads', required=True)
-    group2.add_argument('-i', '--illumina-clip', type=str,
-                        help='adaptor file', required=True)
-    group2.add_argument('--hcrop', '--head-crop', type=int,
-                        help='head trim', required=True)
-    group2.add_argument('-l', '--leading-trim', type=int,
-                        help='leading trim', required=True)
-    group2.add_argument('-t', '--trail-trim', type=int,
-                        help='trail trim', required=True)
-    group2.add_argument('--wsize', '--window-size', type=int,
-                        help='sliding window size', required=True)
-    group2.add_argument('--qscore', '--quality-score', type=int,
-                        help='quality score for trimming', required=True)
-    group2.add_argument('--mlen', '--min-length', type=int,
-                        help='minimum length', required=True)
-    group2.add_argument('--mhlen', '--min-hit-length', type=int,
-                        help='minimum hit length', required=True)
-    group2.add_argument('--hg', '--host-genome', type=str,
-                        help='host genome to get map out', required=True)
-    group2.add_argument('-o', '--out_name', type=str,
-                        help='output file basename', required=True)
-    group2.add_argument('--cdb', '--centrifuge-database', type=str,
-                        help='path to centrifuge database', required=True)
-    group2.add_argument('--qenc', '--quality-encoding', type=str,
-                        help='quality enconding for trimmomatic', default='phred64', required=False)
-
-
-    # --- second level parser for long read mode ---
-    parser_long_seqs = subparsers.add_parser('long_seqs')
-    group3 = parser_long_seqs.add_argument_group('Required arguments',
-                                                 'Description')
-    group3.add_argument('-l', '--long-seqs', type=str,
-                        help='long sequences file', required=True)
-    group3.add_argument('-o', '--out_name', type=str,
-                        help='output file basename', required=True)
-    group3.add_argument('--mhlen', '--min-hit-length', type=int,
-                        help='minimum hit length', required=True)
-    group3.add_argument('--cdb', '--centrifuge-database', type=str,
-                        help='path to centrifuge database', required=True)
-
-    myargs_lr = {
-        '-n': ['--number-of-threads', str, 'Number of threads', True],
-        '-z': ['--number-of-chunks', str, 'Number of chunks to split a'
-                                          ' file', True],
-        '-t': ['--taxonomy-update', str, 'Set to True the first '
-                                         'time the program is used. '
-                                         'Otherwise set to False', True],
-        '-p': ['--plast-database', str, 'path to plast database', True],
-        '-m': ['--plast-id-map', str, 'path to taxonomy map for '
-                                      'plast database', True],
-        '-e': ['--e-value', float, 'threshold for plast searches', True],
-        '--pid': ['--percent_id', float, 'percentage identity for '
-                                         'plast searches', True],
-        '--cov': ['--coverage', float, 'percentage coverage for '
-                                       'plast searches', True],
-    }
-
-    #  ---  second level parser for read_prep_env ---  #
-    parser_read_prep_env = subparsers.add_parser('read_prep_env')
-    group4 = parser_read_prep_env.add_argument_group('Required arguments',
-                                                 'Description')
-    group4.add_argument('--r1', '--reads-r1', type=str,
-                        help='left reads', required=True)
-    group4.add_argument('--r2', '--reads-r2', type=str,
-                        help='right reads', required=True)
-    group4.add_argument('-n', '--threads', type=int,
-                        help='number of threads', required=True)
-    group4.add_argument('-i', '--illumina-clip', type=str,
-                        help='adaptor file', required=True)
-    group4.add_argument('--hcrop', '--head-crop', type=int,
-                        help='head trim', required=True)
-    group4.add_argument('-l', '--leading-trim', type=int,
-                        help='leading trim', required=True)
-    group4.add_argument('-t', '--trail-trim', type=int,
-                        help='trail trim', required=True)
-    group4.add_argument('--wsize', '--window-size', type=int,
-                        help='sliding window size', required=True)
-    group4.add_argument('--qscore', '--quality-score', type=int,
-                        help='quality score for trimming', required=True)
-    group4.add_argument('--mlen', '--min-length', type=int,
-                        help='minimum length', required=True)
-    group4.add_argument('--mhlen', '--min-hit-length', type=int,
-                        help='minimum hit length', required=True)
-    group4.add_argument('-o', '--out_name', type=str,
-                        help='output file basename', required=True)
-    group4.add_argument('--cdb', '--centrifuge-database', type=str,
-                        help='path to centrifuge database', required=True)
-    group4.add_argument('--qenc', '--quality-encoding', type=str,
-                        help='quality enconding for trimmomatic', default='phred64', required=False)
-
-   
-    parser_download_db = subparsers.add_parser("download_db")
-    parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
-                                    help="directory name for storing the databases")
-    parser_download_db.add_argument("-p", "--path", type=str, default=".",
-                                    help="filesystem path for storing the databases")
-
-    for key in myargs_lr:
-        try:
-            group3.add_argument(key, myargs_lr[key][0],
-                                type=myargs_lr[key][1],
-                                help=myargs_lr[key][2],
-                                required=myargs_lr[key][3])
-        except:
-            parser_long_seqs.add_argument(key, myargs_lr[key][0],
-                                          type=myargs_lr[key][1],
-                                          help=myargs_lr[key][2])
-
-    parser_short_seqs.set_defaults(func=short_seqs)
-    parser_long_seqs.set_defaults(func=long_seqs)
-    parser_read_prep.set_defaults(func=read_prep)
-    parser_read_prep_env.set_defaults(func=read_prep_env)
-    parser_download_db.set_defaults(func=download_db)
-
-    return parser.parse_args()
-
 def summary_table():
     # Change directory to 'Eukfinder_results'
     try:
@@ -2787,9 +2617,221 @@ def summary_table():
 
     print(f"Summary table has been created: Eukfinder_results/{output_file}")
 
+def update_json(new_json_data):
+
+    with open(_json_path, "w") as json_file:
+        json.dump(new_json_data, json_file, indent=4)
+
+def read_json():
+
+    with open(_json_path, "r") as json_file:
+        json_data = json.load(json_file)
+
+    return json_data
+
+def parse_arguments(json_data):
+
+    myargs = {
+        '-n': ['--number-of-threads', str, '20', 'Number of threads', False],
+        '-z': ['--number-of-chunks', str, '2', 'Number of chunks to split a '
+                                          'file', False],
+        '-t': ['--taxonomy-update', str, 'False', 'Set to True the first '
+               'time the program is used. Otherwise set to False', False],
+        '-p': ['--plast-database', str, json_data["plast_db"], 'path to plast database', False],
+        '-m': ['--plast-id-map', str, json_data["plast_map"], 'path to taxonomy map for '
+                                      'plast database', False],
+        '--cdb': ['--centrifuge-database', str, json_data["centrifuge_db"], 'path to centrifuge '
+                                                'database', False],
+        '-e': ['--e-value', float, 0.01, 'threshold for plast searches', False],
+        '--pid': ['--percent_id', float, 60, 'percentage identity for '
+                                         'plast searches', False],
+        '--cov': ['--coverage', float, 10, 'percentage coverage for '
+                                       'plast searches', False],
+        '--max_m': ['--max_memory', str, "300", 'Maximum memory allocated to '
+                                         'carry out an assembly', False],
+        '-k': ['--kmers', str, "21, 33, 55", 'kmers to use during assembly. '
+               'These must be odd and less than 128. default is 21,33,55',
+               False],
+        '--mhlen': ['--min-hit-length', int, 25, 'Maximum memory allocated to '
+                                             'carry out an assembly', False],
+        '--pclass': ['--p-reads-class', str, None, 'Classification for '
+                                             'pair end reads', False],
+        '--uclass': ['--u-reads-class', str, None, 'Classification for '
+                                             'un-pair end reads', False]
+    }
+
+    parser = argparse.ArgumentParser(prog='eukfinder')
+    subparsers = parser.add_subparsers()
+
+    #  ---  second level parser for pair mode ---  #
+    parser_short_seqs = subparsers.add_parser('short_seqs')
+    group1 = parser_short_seqs.add_argument_group('Required arguments',
+                                                  'Description')
+    group1.add_argument('--r1', '--reads-r1', type=str,
+                        help='left reads', required=True)
+    group1.add_argument('--r2', '--reads-r2', type=str,
+                        help='right reads', required=True)
+    group1.add_argument('--un', '--un-pair-reads', type=str,
+                        help='orphan reads', required=True)
+    group1.add_argument('-o', '--out_name', type=str,
+                        help='output file basename', required=True)
+    for key in myargs:
+        try:
+            group1.add_argument(key, myargs[key][0],
+                                type=myargs[key][1],
+                                default=myargs[key][2],
+                                help=myargs[key][3],
+                                required=myargs[key][4])
+        except:
+            parser_short_seqs.add_argument(key, myargs[key][0],
+                                           type=myargs[key][1],
+                                           default=myargs[key][2],
+                                           help=myargs[key][3])
+
+    #  ---  second level parser for unpair mode ---  #
+    #  ---  second level parser for read_prep ---  #
+    parser_read_prep = subparsers.add_parser('read_prep')
+    group2 = parser_read_prep.add_argument_group('Required arguments',
+                                                 'Description')
+    group2.add_argument('--r1', '--reads-r1', type=str,
+                        help='left reads', required=True)
+    group2.add_argument('--r2', '--reads-r2', type=str,
+                        help='right reads', required=True)
+    group2.add_argument('-n', '--threads', type=int,
+                        help='number of threads', required=True)
+    group2.add_argument('-i', '--illumina-clip', type=str,
+                        help='adaptor file', required=True)
+    group2.add_argument('--hcrop', '--head-crop', type=int,
+                        help='head trim', required=True)
+    group2.add_argument('-l', '--leading-trim', type=int,
+                        help='leading trim', required=True)
+    group2.add_argument('-t', '--trail-trim', type=int,
+                        help='trail trim', required=True)
+    group2.add_argument('--wsize', '--window-size', type=int,
+                        help='sliding window size', required=True)
+    group2.add_argument('--qscore', '--quality-score', type=int,
+                        help='quality score for trimming', required=True)
+    group2.add_argument('--mlen', '--min-length', type=int,
+                        help='minimum length', required=True)
+    group2.add_argument('--mhlen', '--min-hit-length', type=int,
+                        help='minimum hit length', required=True)
+    group2.add_argument('--hg', '--host-genome', type=str,
+                        help='host genome to get map out', required=True)
+    group2.add_argument('-o', '--out_name', type=str,
+                        help='output file basename', required=True)
+    group2.add_argument('--cdb', '--centrifuge-database', type=str,
+                        default= json_data["centrifuge_db"],
+                        help='path to centrifuge database', required=False)
+    group2.add_argument('--qenc', '--quality-encoding', type=str,
+                        help='quality enconding for trimmomatic', default='phred64', required=False)
+
+
+    # --- second level parser for long read mode ---
+    parser_long_seqs = subparsers.add_parser('long_seqs')
+    group3 = parser_long_seqs.add_argument_group('Required arguments',
+                                                 'Description')
+    group3.add_argument('-l', '--long-seqs', type=str,
+                        help='long sequences file', required=True)
+    group3.add_argument('-o', '--out_name', type=str,
+                        help='output file basename', required=True)
+    group3.add_argument('--mhlen', '--min-hit-length', type=int,
+                        help='minimum hit length', required=True)
+    group3.add_argument('--cdb', '--centrifuge-database', type=str,
+                        default= json_data["centrifuge_db"],
+                        help='path to centrifuge database', required=False)
+
+    myargs_lr = {
+        '-n': ['--number-of-threads', str, '20', 'Number of threads', False],
+        '-z': ['--number-of-chunks', str, '2', 'Number of chunks to split a'
+                                          ' file', False],
+        '-t': ['--taxonomy-update', str, 'False', 'Set to True the first '
+                                         'time the program is used. '
+                                         'Otherwise set to False', False],
+        '-p': ['--plast-database', str, json_data["plast_db"], 'path to plast database', False],
+        '-m': ['--plast-id-map', str, json_data["plast_map"], 'path to taxonomy map for '
+                                      'plast database', False],
+        '-e': ['--e-value', float, 0.01, 'threshold for plast searches', False],
+        '--pid': ['--percent_id', float, 60, 'percentage identity for '
+                                         'plast searches', False],
+        '--cov': ['--coverage', float, 10, 'percentage coverage for '
+                                       'plast searches', False],
+    }
+
+    #  ---  second level parser for read_prep_env ---  #
+    parser_read_prep_env = subparsers.add_parser('read_prep_env')
+    group4 = parser_read_prep_env.add_argument_group('Required arguments',
+                                                 'Description')
+    group4.add_argument('--r1', '--reads-r1', type=str,
+                        help='left reads', required=True)
+    group4.add_argument('--r2', '--reads-r2', type=str,
+                        help='right reads', required=True)
+    group4.add_argument('-n', '--threads', type=int,
+                        help='number of threads', required=True)
+    group4.add_argument('-i', '--illumina-clip', type=str,
+                        help='adaptor file', required=True)
+    group4.add_argument('--hcrop', '--head-crop', type=int,
+                        help='head trim', required=True)
+    group4.add_argument('-l', '--leading-trim', type=int,
+                        help='leading trim', required=True)
+    group4.add_argument('-t', '--trail-trim', type=int,
+                        help='trail trim', required=True)
+    group4.add_argument('--wsize', '--window-size', type=int,
+                        help='sliding window size', required=True)
+    group4.add_argument('--qscore', '--quality-score', type=int,
+                        help='quality score for trimming', required=True)
+    group4.add_argument('--mlen', '--min-length', type=int,
+                        help='minimum length', required=True)
+    group4.add_argument('--mhlen', '--min-hit-length', type=int,
+                        help='minimum hit length', required=True)
+    group4.add_argument('-o', '--out_name', type=str,
+                        help='output file basename', required=True)
+    group4.add_argument('--cdb', '--centrifuge-database', type=str,
+                        help='path to centrifuge database', required=True)
+    group4.add_argument('--qenc', '--quality-encoding', type=str,
+                        help='quality enconding for trimmomatic', default='phred64', required=False)
+
+   
+    parser_download_db = subparsers.add_parser("download_db")
+    parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
+                                    help="directory name for storing the databases")
+    parser_download_db.add_argument("-p", "--path", type=str, default="~/.eukfinder",
+                                    help="filesystem path for storing the databases")
+
+    for key in myargs_lr:
+        try:
+            group3.add_argument(key, myargs_lr[key][0],
+                                type=myargs_lr[key][1],
+                                default=myargs[key][2],
+                                help=myargs_lr[key][3],
+                                required=myargs_lr[key][4])
+        except:
+            parser_long_seqs.add_argument(key, myargs_lr[key][0],
+                                          type=myargs_lr[key][1],
+                                          default=myargs[key][2],
+                                          help=myargs_lr[key][3])
+
+    parser_short_seqs.set_defaults(func=short_seqs)
+    parser_long_seqs.set_defaults(func=long_seqs)
+    parser_read_prep.set_defaults(func=read_prep)
+    parser_read_prep_env.set_defaults(func=read_prep_env)
+    parser_download_db.set_defaults(func=download_db)
+
+    return parser.parse_args()
 
 def main():
-    args = parse_arguments()
+    # json creation
+    if not os.path.exists(_json_path):
+        os.makedirs(os.path.dirname(_json_path), exist_ok=True)
+        update_json(
+            {
+                "centrifuge_db": "",
+                "plast_db": "",
+                "plast_map": ""
+            }
+        )
+
+    json_data = read_json()
+    args = parse_arguments(json_data)
 
     if len(sys.argv) == 1:
         print('Try Eukfinder.py -h for more information', sep=' ',
