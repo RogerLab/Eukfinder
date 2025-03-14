@@ -35,6 +35,10 @@ _database = {
     "5": ["Eukfinder Env Dbs", "72 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/eukfinder_dbs_env_v1.2.5.tar.gz", "eukfinder_dbs_env_v1.2.5.tar.gz"]
 }
 
+_cdb = "Centrifuge_DB/Centrifuge_NewDB_Sept2020"
+_pdb = "PLAST_DB/PlastDB_Jun2020.fasta"
+_pmap = "PLAST_DB/PlastDB_Jun2020_map.txt"
+
 # JSON
 _json_path = f"{os.path.expanduser('~')}/.eukfinder/config.json"
 
@@ -2422,17 +2426,13 @@ def perform_long_seqs(user_args):
 
 # NOTE: It is perhaps worthwhile to verify checksum in the future
 def perform_download_db(user_args):
+    path = user_args['path']
     name = user_args['name']
-
-    if user_args['path'] == ".":
-        path = os.getcwd()
-    else:
-        path = user_args['path']
 
     try:
         os.mkdir(f"{path}/{name}")
-    except FileExistsError:
-        sys.exit(f"{name} already exists in {path}, choose a different name or filesystem path!")
+    except FileNotFoundError: # TODO: should create directory instead
+        sys.exit(f"{path} does not exist,check file integrity!\nExiting...")
 
     print(f"Created {path}/{name}\n")
 
@@ -2456,6 +2456,14 @@ def perform_download_db(user_args):
                     file.extractall(f"{path}/{name}")
                     file.close()
                     os.remove(f"{path}/{name}/{content[3]}")
+
+                print("\nUpdating default database paths in json file...")
+                new_json_data = {
+                    "Centrifuge_db": f"{path}/{name}/{_cdb}",
+                    "plast_db": f"{path}/{name}/{_pdb}",
+                    "plast_map": f"{path}/{name}/{_pmap}"
+                }
+                update_json(new_json_data)
 
                 os.remove(f"{path}/{name}/{_all_db[3]}")
                 sys.exit(f"\nDatabases downloaded and decompressed in {path}/{name}, exiting...")
@@ -2607,7 +2615,10 @@ def summary_table():
 
     print(f"Summary table has been created: Eukfinder_results/{output_file}")
 
-# TODO: update_json()
+def update_json(new_json_data):
+
+    with open(_json_path, "w") as json_file:
+        json.dump(new_json_data, json_file, indent=4)
 
 def read_json():
 
@@ -2615,7 +2626,7 @@ def read_json():
         with open(_json_path, "r") as json_file:
             json_data = json.load(json_file)
     except FileNotFoundError: # TODO: should create this if not found
-        exit(f"config.json cannot be found at {_json_path}. \nExiting...")
+        sys.exit(f"config.json cannot be found at {_json_path}. \nExiting...")
 
     return json_data
 
@@ -2784,7 +2795,7 @@ def parse_arguments(json_data):
     parser_download_db = subparsers.add_parser("download_db")
     parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
                                     help="directory name for storing the databases")
-    parser_download_db.add_argument("-p", "--path", type=str, default=".",
+    parser_download_db.add_argument("-p", "--path", type=str, default="~/.eukfinder",
                                     help="filesystem path for storing the databases")
 
     for key in myargs_lr:
