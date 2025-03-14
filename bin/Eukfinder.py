@@ -2622,11 +2622,8 @@ def update_json(new_json_data):
 
 def read_json():
 
-    try:
-        with open(_json_path, "r") as json_file:
-            json_data = json.load(json_file)
-    except FileNotFoundError: # TODO: should create this if not found
-        sys.exit(f"config.json cannot be found at {_json_path}. \nExiting...")
+    with open(_json_path, "r") as json_file:
+        json_data = json.load(json_file)
 
     return json_data
 
@@ -2820,6 +2817,21 @@ def parse_arguments(json_data):
     return parser.parse_args()
 
 def main():
+    # json creation
+    if not os.path.exists(_json_path):
+        os.makedirs("~/.eukfinder", exist_ok=True)
+
+        with open(_json_path, "w"):
+            pass
+
+        update_json(
+            {
+                "Centrifuge": "",
+                "plast_db": "",
+                "plast_map": ""
+            }
+        )
+
     json_data = read_json()
     args = parse_arguments(json_data)
 
