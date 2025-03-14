@@ -2461,7 +2461,7 @@ def perform_download_db(user_args):
 
                 print("\nUpdating default database paths in json file...")
                 new_json_data = {
-                    "Centrifuge_db": f"{path}/{name}/{_cdb}",
+                    "centrifuge_db": f"{path}/{name}/{_cdb}",
                     "plast_db": f"{path}/{name}/{_pdb}",
                     "plast_map": f"{path}/{name}/{_pmap}"
                 }
@@ -2824,7 +2824,7 @@ def main():
         os.makedirs(os.path.dirname(_json_path), exist_ok=True)
         update_json(
             {
-                "Centrifuge": "",
+                "centrifuge_db": "",
                 "plast_db": "",
                 "plast_map": ""
             }
