@@ -39,7 +39,7 @@ _database = {
 
 _cdb = "Centrifuge_DB/Centrifuge_NewDB_Sept2020"
 _pdb = "PLAST_DB/PlastDB.fasta"
-_pmap = "PLAST_DB/PlastDB_map.txt	"
+_pmap = "PLAST_DB/PlastDB_map.txt"
 
 # JSON
 _json_path = f"{os.path.expanduser('~')}/.eukfinder/config.json"
