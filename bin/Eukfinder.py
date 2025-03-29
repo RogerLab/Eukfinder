@@ -27,14 +27,15 @@ __version__ = '1.2.4'
 
 # database info
 # NOTE: It contains test datasets to verify the correct installation and functionality of the Eukfinder pipeline
-_all_db = ["eukfinder databases", "72 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_all_v1.2.4.tar.gz", "eukfinder_dbs_all_v1.2.4.tar.gz"]
+_all_db = ["eukfinder env databases", "72 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_env_v1.2.4.tar.gz", "eukfinder_dbs_env_v1.2.4.tar.gz"]
 
 _database = {
     "1": ["centrifuge database", "70 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/centrifuge_db.tar.gz", "centrifuge_db.tar.gz"],
     "2": ["PLAST database", "2.1 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
     "3": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
     "4": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"],
-    "5": ["Eukfinder Env Dbs", "71 GB", "https://perun.biochem.dal.ca/Eukfinder/eukfinder_dbs_env_v1.2.4.tar.gz", "eukfinder_dbs_env_v1.2.4.tar.gz"]
+    "5": ["test set", "51 MB", "/misc/scratch3/Eukfinder/DB/compressed_db/test_files.tar.gz", "test_files.tar.gz"],
+    "6": ["test set with tiny dbs", "51 MB", "/misc/scratch3/Eukfinder/DB/compressed_db/test_sample_with_tiny_DB.tar.gz", "test_sample_with_tiny_DB.tar.gz"]
 }
 
 _cdb = "Centrifuge_DB/Centrifuge_NewDB_Sept2020"
