@@ -34,8 +34,8 @@ _database = {
     "2": ["PLAST database", "2.1 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/PlastDB_db.tar.gz", "PlastDB_db.tar.gz"],
     "3": ["Human Genome for read decontamination", "0.92 GB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz", "GCF_000001405.39_GRCh38.p13_human_genome.fna.tar.gz"],
     "4": ["Read Adapters for Illumina sequencing", "2.4 KB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/TrueSeq2_NexteraSE-PE.fa.tar.gz", "TrueSeq2_NexteraSE-PE.fa.tar.gz"],
-    "5": ["test set", "51 MB", "/misc/scratch3/Eukfinder/DB/compressed_db/test_files.tar.gz", "test_files.tar.gz"],
-    "6": ["test set with tiny dbs", "51 MB", "/misc/scratch3/Eukfinder/DB/compressed_db/test_sample_with_tiny_DB.tar.gz", "test_sample_with_tiny_DB.tar.gz"]
+    "5": ["test set", "51 MB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/test_files.tar.gz", "test_files.tar.gz"],
+    "6": ["test set with tiny dbs", "51 MB", "https://perun.biochem.dal.ca/Eukfinder/compressed_db/test_sample_with_tiny_DB.tar.gz", "test_sample_with_tiny_DB.tar.gz"]
 }
 
 _cdb = "Centrifuge_DB/Centrifuge_NewDB_Sept2020"
@@ -2437,12 +2437,9 @@ def perform_download_db(user_args):
     path = user_args['path']
     name = user_args['name']
 
-    try:
+    if not os.path.isdir(f"{path}/{name}"):
         os.mkdir(f"{path}/{name}")
-    except FileNotFoundError: # TODO: should create directory instead
-        sys.exit(f"{path} does not exist,check file integrity!\nExiting...")
-
-    print(f"Created {path}/{name}\n")
+        print(f"Created {path}/{name}\n")
 
     try:
         while True:
@@ -2484,6 +2481,7 @@ def perform_download_db(user_args):
                     print(f"3. {_database['3'][0]} - {_database['3'][1]}")
                     print(f"4. {_database['4'][0]} - {_database['4'][1]}")
                     print(f"5. {_database['5'][0]} - {_database['5'][1]}")
+                    print(f"6. {_database['6'][0]} - {_database['6'][1]}")
                     user_input = input("\nOr type exit, if you would like to skip for now:\n>")
 
                     if user_input == "exit":
@@ -2800,7 +2798,7 @@ def parse_arguments(json_data):
     parser_download_db = subparsers.add_parser("download_db")
     parser_download_db.add_argument("-n", "--name", type=str, default="eukfinder_databases",
                                     help="directory name for storing the databases")
-    parser_download_db.add_argument("-p", "--path", type=str, default="~/.eukfinder",
+    parser_download_db.add_argument("-p", "--path", type=str, default=f"{os.path.expanduser('~')}/.eukfinder",
                                     help="filesystem path for storing the databases")
 
     for key in myargs_lr:
