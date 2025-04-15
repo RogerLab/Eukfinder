@@ -35,8 +35,7 @@ All feedback is appreciated! Please [open an issue](https://github.com/RogerLab/
 <!-- Publication -->
 ## Publication/Citation
 
-Zhao, D., Salas-Leiva, D.E., Williams, S.K., Dunn, K.A. and Roger, A.J., 2023. Eukfinder: a pipeline to retrieve microbial eukaryote genomes from metagenomic sequencing data. bioRxiv, pp.2023-12.
-
+Zhao, D., Salas-Leiva, D.E., Williams, S.K., Dunn, K.A., Shao, J.D., and Roger, A.J., 2025. Eukfinder: a pipeline to retrieve microbial eukaryote genome sequences from metagenomic data. mBio0:e00699-25. [https://doi.org/10.1128/mbio.00699-25](https://doi.org/10.1128/mbio.00699-25).
 
 <!-- CONTACT -->
 ## Contact
