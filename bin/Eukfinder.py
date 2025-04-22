@@ -2656,8 +2656,7 @@ def parse_arguments(json_data):
         '-k': ['--kmers', str, "21, 33, 55", 'kmers to use during assembly. '
                'These must be odd and less than 128. default is 21,33,55',
                False],
-        '--mhlen': ['--min-hit-length', int, 25, 'Maximum memory allocated to '
-                                             'carry out an assembly', False],
+        '--mhlen': ['--min-hit-length', int, 25, 'Minimum hit length by Centrifuge searches', False],
         '--pclass': ['--p-reads-class', str, None, 'Classification for '
                                              'pair end reads', False],
         '--uclass': ['--u-reads-class', str, None, 'Classification for '
@@ -2716,7 +2715,7 @@ def parse_arguments(json_data):
     group2.add_argument('--qscore', '--quality-score', type=int,
                         help='quality score for trimming', required=True)
     group2.add_argument('--mlen', '--min-length', type=int,
-                        help='minimum length', required=True)
+                        help='minimum length of read after trimming to be kept by trimmomatic', required=True)
     group2.add_argument('--mhlen', '--min-hit-length', type=int,
                         help='minimum hit length', required=True)
     group2.add_argument('--hg', '--host-genome', type=str,
@@ -2784,7 +2783,7 @@ def parse_arguments(json_data):
     group4.add_argument('--qscore', '--quality-score', type=int,
                         help='quality score for trimming', required=True)
     group4.add_argument('--mlen', '--min-length', type=int,
-                        help='minimum length', required=True)
+                        help='minimum length of read after trimming to be kept by trimmomatic', required=True)
     group4.add_argument('--mhlen', '--min-hit-length', type=int,
                         help='minimum hit length', required=True)
     group4.add_argument('-o', '--out_name', type=str,
