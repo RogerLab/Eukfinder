@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="eukfinder",
-    version="1.2.3",
+    version="1.2.4",
     author="Dayana E. Salas-Leiva, Dandan Zhao",
     author_email="ds2000@cam.ac.uk, d.zhao@dal.ca",
     description="",
